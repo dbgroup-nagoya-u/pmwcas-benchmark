@@ -1,0 +1,6 @@
+[submodule "external/cpp-utility"]
+	path = external/cpp-utility
+	url = https://github.com/dbgroup-nagoya-u/cpp-utility.git
+[submodule "external/cpp-benchmark"]
+	path = external/cpp-benchmark
+	url = https://github.com/dbgroup-nagoya-u/cpp-benchmark.git
