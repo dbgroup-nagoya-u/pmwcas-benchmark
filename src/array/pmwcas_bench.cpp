@@ -97,7 +97,7 @@ main(int argc, char *argv[])
     return 0;
   }
 
-  const std::string pmem_path{"/data1/sugiura-pmwcas-bench-test"};
+  const std::string pmem_path{argv[1]};
 
   if (FLAGS_init) {
     std::cout << "Initialize a persitent array with zeros..." << std::endl;
