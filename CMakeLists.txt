@@ -18,15 +18,18 @@ set(PMWCAS_BENCH_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(MICROSOFT_PMWCAS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/microsoft-pmwcas")
 
 #--------------------------------------------------------------------------------------#
-# Set Compile Options
+# Parameters for benchmarking
 #--------------------------------------------------------------------------------------#
 
-set(
-  PMWCAS_BENCH_TARGET_NUM
-  "2"
-  CACHE STRING
-  "The maximum number of target words of PMwCAS."
-)
+set(PMWCAS_BENCH_ELEMENT_NUM "1000000" CACHE STRING "The number of elements in a target array.")
+set(PMWCAS_BENCH_TARGET_NUM "2" CACHE STRING "The maximum number of target words of PMwCAS.")
+
+#--------------------------------------------------------------------------------------#
+# Configure PMDK
+#--------------------------------------------------------------------------------------#
+
+find_package(PkgConfig)
+pkg_check_modules(LIBPMEMOBJ++ REQUIRED libpmemobj++)
 
 #--------------------------------------------------------------------------------------#
 # Configure external libraries
@@ -58,7 +61,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 # set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 # set(BUILD_APPS OFF CACHE BOOL "" FORCE)
 
-# add_subdirectory("${PPMWCAS_SOURCE_DIR}")
+# add_subdirectory("${PMWCAS_SOURCE_DIR}")
 
 #--------------------------------------------------------------------------------------#
 # Build Benchmark
@@ -66,7 +69,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 
 # build executable
 add_executable(pmwcas_bench
-  "${PMWCAS_BENCH_SOURCE_DIR}/src/pmwcas_bench.cpp"
+  "${PMWCAS_BENCH_SOURCE_DIR}/src/array/pmwcas_bench.cpp"
 )
 target_compile_features(pmwcas_bench PRIVATE
   "cxx_std_17"
@@ -79,17 +82,21 @@ target_compile_options(pmwcas_bench PRIVATE
   $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
 )
 target_compile_definitions(pmwcas_bench PRIVATE
+  PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
   PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
 )
-# target_include_directories(pmwcas_bench PRIVATE
-#   "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
-#   "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
-#   "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
-# )
+target_include_directories(pmwcas_bench PRIVATE
+  "${PMWCAS_BENCH_SOURCE_DIR}/src"
+  "${LIBPMEMOBJ++_INCLUDE_DIRS}"
+  # "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
+  # "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
+  # "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
+)
 target_link_libraries(pmwcas_bench PRIVATE
   # pmwcas
   # pmwcas_static
   # rt
+  ${LIBPMEMOBJ++_LIBRARIES}
   gflags
   cpp_utility
   cpp_bench

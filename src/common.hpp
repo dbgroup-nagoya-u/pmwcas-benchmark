@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Database Group, Nagoya University
+ * Copyright 2022 Database Group, Nagoya University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,36 @@
  * limitations under the License.
  */
 
-#ifndef MWCAS_BENCHMARK_COMMON_H
-#define MWCAS_BENCHMARK_COMMON_H
+#ifndef PMWCAS_BENCHMARK_COMMON_HPP
+#define PMWCAS_BENCHMARK_COMMON_HPP
 
-#include <atomic>  // sngle CAS implementation
+// system headers
+#include <libpmemobj++/mutex.hpp>
+
+// C++ standard libraries
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
-#include "aopt/aopt_descriptor.hpp"    // AOPT implementation
-#include "mwcas/mwcas.h"               // PMwCAS implementation
-#include "mwcas/mwcas_descriptor.hpp"  // our MwCAS without GC implementation
+/*######################################################################################
+ * Type aliases for competitors
+ *####################################################################################*/
 
-/*##################################################################################################
- * Global type aliases
- *################################################################################################*/
+using Lock = ::pmem::obj::mutex;
 
-using MwCAS = ::dbgroup::atomic::mwcas::MwCASDescriptor;
-using PMwCAS = ::pmwcas::DescriptorPool;
-using AOPT = ::dbgroup::atomic::aopt::AOPTDescriptor;
-using SingleCAS = ::std::atomic_size_t;
+#define CREATE_MODE_RW (S_IWUSR | S_IRUSR)
 
-/*##################################################################################################
+/*######################################################################################
  * Global constants and enums
- *################################################################################################*/
+ *####################################################################################*/
 
-/// the maximum number of MwCAS targets
-constexpr size_t kTargetNum = MWCAS_BENCH_TARGET_NUM;
+/// the number of elements in a target array.
+constexpr size_t kElementNum = PMWCAS_BENCH_ELEMENT_NUM;
 
-#endif  // MWCAS_BENCHMARK_COMMON_H
+/// the maximum number of PMwCAS targets.
+constexpr size_t kTargetNum = PMWCAS_BENCH_TARGET_NUM;
+
+const std::string kArrayBenchLayout = "pmwcas_bench_with_array";
+
+#endif  // PMWCAS_BENCHMARK_COMMON_HPP
