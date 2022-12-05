@@ -53,6 +53,13 @@ DEFINE_validator(seed, &ValidateRandomSeed);
  * Utility functions
  *####################################################################################*/
 
+/**
+ * @brief Run procedures for benchmarking with a given implementation.
+ *
+ * @tparam Implementation an implementation to be benchmarked.
+ * @param target_name the output name of a implementation.
+ * @param pmem_path the path to persistent memory.
+ */
 template <class Implementation>
 void
 Run(  //

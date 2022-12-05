@@ -62,6 +62,11 @@ class PmemArray
    * Public constructors/destructors
    *##################################################################################*/
 
+  /**
+   * @brief Construct a new PmemArray object.
+   *
+   * @param path the path of persistent memory for benchmarking.
+   */
   PmemArray(const std::string &path)
   {
     try {
@@ -87,6 +92,9 @@ class PmemArray
    * Public getters
    *##################################################################################*/
 
+  /**
+   * @return the reference to an opened pmemobj_pool object.
+   */
   auto
   GetPool()  //
       -> ArrayPool_t &
@@ -98,6 +106,10 @@ class PmemArray
    * Public utilities
    *##################################################################################*/
 
+  /**
+   * @brief Initialize a target array by filling zeros.
+   *
+   */
   void
   Initialize()
   {
@@ -123,6 +135,10 @@ class PmemArray
     }
   }
 
+  /**
+   * @brief Show current values in a target arrays on stdout.
+   *
+   */
   void
   ShowSampledElements()
   {
@@ -153,6 +169,7 @@ class PmemArray
    * Internal member variables
    *##################################################################################*/
 
+  /// a pmemobj_pool object that contains a target array.
   ArrayPool_t pmem_pool_{};
 };
 

@@ -31,7 +31,7 @@ class Operation
    * Public constructors and assignment operators
    *##################################################################################*/
 
-  constexpr Operation() : targets_{} {}
+  constexpr Operation() = default;
 
   constexpr Operation(const Operation &) = default;
   constexpr Operation &operator=(const Operation &obj) = default;
@@ -48,6 +48,10 @@ class Operation
    * Public getters/setters
    *##################################################################################*/
 
+  /**
+   * @param i the index in PMwCAS operations.
+   * @return the position of i-th target.
+   */
   auto
   GetPosition(const size_t i) const  //
       -> size_t
@@ -55,8 +59,19 @@ class Operation
     return targets_[i];
   }
 
+  /**
+   * @brief Set the position of an element as i-th target.
+   *
+   * Note that this function check the uniqueness of positions for linearizability of
+   * PMwCAS operations.
+   *
+   * @param i specify i-th target.
+   * @param pos the position in an array.
+   * @retval true if the position has been set.
+   * @retval false otherwise.
+   */
   auto
-  SetAddrIfUnique(  //
+  SetPositionIfUnique(  //
       const size_t i,
       const size_t pos)  //
       -> bool
@@ -89,7 +104,7 @@ class Operation
    *##################################################################################*/
 
   /// target addresses of an MwCAS operation
-  std::array<size_t, kTargetNum> targets_;
+  std::array<size_t, kTargetNum> targets_{};
 };
 
 #endif  // PMWCAS_BENCHMARK_ARRAY_OPERATION_HPP

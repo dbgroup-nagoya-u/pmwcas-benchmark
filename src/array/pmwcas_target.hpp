@@ -51,6 +51,11 @@ class PMwCASTarget
    * Public constructors/destructors
    *##################################################################################*/
 
+  /**
+   * @brief Construct a new PMwCASTarget object.
+   *
+   * @param target_arr the reference to a target array.
+   */
   PMwCASTarget(PmemArray &target_arr) : pool_{target_arr.GetPool()}, root_{pool_.root()} {}
 
   /*####################################################################################
@@ -66,11 +71,13 @@ class PMwCASTarget
   void
   SetUpForWorker()
   {
+    // do nothing
   }
 
   void
   TearDownForWorker()
   {
+    // do nothing
   }
 
   /*####################################################################################
@@ -85,8 +92,10 @@ class PMwCASTarget
    * Internal member variables
    *##################################################################################*/
 
+  /// a pmemobj_pool that contains a target array.
   ::pmem::obj::pool<Root> pool_{};
 
+  /// a pointer to the root object in a pool.
   ::pmem::obj::persistent_ptr<Root> root_{};
 };
 
@@ -94,6 +103,12 @@ class PMwCASTarget
  * Specializations for each PMwCAS implementations
  *####################################################################################*/
 
+/**
+ * @brief Specialization for the lock-based implementation.
+ *
+ * @tparam Lock
+ * @param ops a target PMwCAS operation.
+ */
 template <>
 inline void
 PMwCASTarget<Lock>::Execute(const Operation &ops)

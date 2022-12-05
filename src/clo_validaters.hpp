@@ -24,6 +24,10 @@
 // local sources
 #include "common.hpp"
 
+/*######################################################################################
+ * Validators for gflags
+ *####################################################################################*/
+
 template <class Number>
 static auto
 ValidatePositiveVal(const char *flagname, const Number value)  //

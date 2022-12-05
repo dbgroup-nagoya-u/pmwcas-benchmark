@@ -42,6 +42,12 @@ class OperationEngine
    * Public constructors and assignment operators
    *##################################################################################*/
 
+  /**
+   * @brief Construct a new OperationEngine object.
+   *
+   * @param skew_param a skew parameter in Zipf's law.
+   * @param random_seed a seed value for reproducibility.
+   */
   OperationEngine(  //
       const double skew_param,
       const size_t random_seed)
@@ -70,6 +76,13 @@ class OperationEngine
    * Public utility functions
    *##################################################################################*/
 
+  /**
+   * @brief Generate a sequence of operations for PMwCAS.
+   *
+   * @param n the number of operations to be executed by each worker.
+   * @param random_seed a seed value for reproducibility.
+   * @return the sequence of operations for PMwCAS.
+   */
   auto
   Generate(  //
       const size_t n,
@@ -86,7 +99,7 @@ class OperationEngine
       Operation ops{};
       for (size_t j = 0; j < kTargetNum; ++j) {
         auto pos = pos_index_.at(zipf_dist_(rand_engine));
-        while (!ops.SetAddrIfUnique(j, pos)) {
+        while (!ops.SetPositionIfUnique(j, pos)) {
           // continue until the different target is selected
           pos = pos_index_.at(zipf_dist_(rand_engine));
         }
@@ -107,7 +120,7 @@ class OperationEngine
   /// the index for indicating actual positions in an array.
   std::vector<size_t> pos_index_{};
 
-  /// a random value generator according to Zipf's law
+  /// a random value generator according to Zipf's law.
   ZipfDist_t zipf_dist_{};
 };
 

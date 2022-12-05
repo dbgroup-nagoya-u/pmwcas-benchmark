@@ -30,13 +30,15 @@
  * Type aliases for competitors
  *####################################################################################*/
 
+/// an alias for lock-based implementations.
 using Lock = ::pmem::obj::mutex;
-
-#define CREATE_MODE_RW (S_IWUSR | S_IRUSR)
 
 /*######################################################################################
  * Global constants and enums
  *####################################################################################*/
+
+/// a file permission for pmemobj_pool.
+#define CREATE_MODE_RW (S_IWUSR | S_IRUSR)
 
 /// the number of elements in a target array.
 constexpr size_t kElementNum = PMWCAS_BENCH_ELEMENT_NUM;
@@ -44,6 +46,7 @@ constexpr size_t kElementNum = PMWCAS_BENCH_ELEMENT_NUM;
 /// the maximum number of PMwCAS targets.
 constexpr size_t kTargetNum = PMWCAS_BENCH_TARGET_NUM;
 
+/// the layout name for benchmarking with arrays.
 const std::string kArrayBenchLayout = "pmwcas_bench_with_array";
 
 #endif  // PMWCAS_BENCHMARK_COMMON_HPP
