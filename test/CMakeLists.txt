@@ -31,39 +31,40 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 #--------------------------------------------------------------------------------------#
 
   # define function to add unit tests in the same format
-function(ADD_MWCAS_BENCH_TEST MWCAS_BENCH_TEST_TARGET)
-  add_executable(${MWCAS_BENCH_TEST_TARGET}
-    "${CMAKE_CURRENT_SOURCE_DIR}/${MWCAS_BENCH_TEST_TARGET}.cpp"
+function(ADD_PMWCAS_BENCH_TEST PMWCAS_BENCH_TEST_TARGET)
+  add_executable(${PMWCAS_BENCH_TEST_TARGET}
+    "${CMAKE_CURRENT_SOURCE_DIR}/${PMWCAS_BENCH_TEST_TARGET}.cpp"
   )
-  target_compile_features(${MWCAS_BENCH_TEST_TARGET} PRIVATE
+  target_compile_features(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
     "cxx_std_17"
   )
-  target_compile_options(${MWCAS_BENCH_TEST_TARGET} PRIVATE
+  target_compile_options(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
     -Wall
     -Wextra
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
   )
-  target_compile_definitions(${MWCAS_BENCH_TEST_TARGET} PRIVATE
-    MWCAS_BENCH_TARGET_NUM=${MWCAS_BENCH_TARGET_NUM}
+  target_compile_definitions(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
+    PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
+    PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
   )
-  target_include_directories(${MWCAS_BENCH_TEST_TARGET} PRIVATE
-    "${MWCAS_BENCH_SOURCE_DIR}/src"
-    "${PMWCAS_SOURCE_DIR}/"
-    "${PMWCAS_SOURCE_DIR}/src"
-    "${PMWCAS_SOURCE_DIR}/include"
+  target_include_directories(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
+    "${PMWCAS_BENCH_SOURCE_DIR}/src"
+    "${LIBPMEMOBJ++_INCLUDE_DIRS}"
+    # "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
+    # "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
+    # "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
   )
-  target_link_libraries(${MWCAS_BENCH_TEST_TARGET} PRIVATE
-    mwcas
-    pmwcas_static
-    mwcas_aopt
-    rt
-    gtest_main
+  target_link_libraries(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
+    # pmwcas
+    # pmwcas_static
+    # rt
+    ${LIBPMEMOBJ++_LIBRARIES}
     cpp_utility
+    gtest_main
   )
-  add_test(NAME ${MWCAS_BENCH_TEST_TARGET} COMMAND $<TARGET_FILE:${MWCAS_BENCH_TEST_TARGET}>)
+  add_test(NAME ${PMWCAS_BENCH_TEST_TARGET} COMMAND $<TARGET_FILE:${PMWCAS_BENCH_TEST_TARGET}>)
 endfunction()
 
-# add unit tests to build targets
-ADD_MWCAS_BENCH_TEST("operation_test")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/array")
