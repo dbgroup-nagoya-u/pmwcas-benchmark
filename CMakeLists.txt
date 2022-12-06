@@ -45,23 +45,24 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 
 #--------------------------------------------------------------------------------------#
-# Configure Microsoft's PMwCAS
+# Configure Microsoft's PMwCAS if needed
 #--------------------------------------------------------------------------------------#
 
-# # build volatile PMwCAS
-# set(PMEM_BACKEND "Volatile" CACHE STRING "" FORCE)
+option(PMWCAS_BENCH_USE_MICROSOFT_PMWCAS "Use microsoft/pmwcas as a PMwCAS implementation." OFF)
+if(${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS})
+  # use PMDK for persistency
+  set(PMEM_BACKEND "PMDK" CACHE STRING "" FORCE)
 
-# # set MwCAS capacity
-# set(DESC_CAP "${PMWCAS_BENCH_TARGET_NUM}" CACHE STRING "" FORCE)
+  # set PMwCAS capacity
+  set(DESC_CAP "${PMWCAS_BENCH_TARGET_NUM}" CACHE STRING "" FORCE)
 
-# # prevent building Google libraries
-# set(GOOGLE_FRAMEWORK OFF CACHE BOOL "" FORCE)
+  # prevent building Google libraries and unit tests
+  set(GOOGLE_FRAMEWORK OFF CACHE BOOL "" FORCE)
+  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+  set(BUILD_APPS OFF CACHE BOOL "" FORCE)
 
-# # prevent building unit tests
-# set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-# set(BUILD_APPS OFF CACHE BOOL "" FORCE)
-
-# add_subdirectory("${PMWCAS_SOURCE_DIR}")
+  add_subdirectory("${MICROSOFT_PMWCAS_SOURCE_DIR}")
+endif()
 
 #--------------------------------------------------------------------------------------#
 # Build Benchmark
@@ -84,34 +85,37 @@ target_compile_options(pmwcas_bench PRIVATE
 target_compile_definitions(pmwcas_bench PRIVATE
   PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
   PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
+  $<$<BOOL:${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS}>:PMWCAS_BENCH_USE_MICROSOFT_PMWCAS>
 )
 target_include_directories(pmwcas_bench PRIVATE
   "${PMWCAS_BENCH_SOURCE_DIR}/src"
   "${LIBPMEMOBJ++_INCLUDE_DIRS}"
-  # "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
-  # "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
-  # "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
 )
 target_link_libraries(pmwcas_bench PRIVATE
-  # pmwcas
-  # pmwcas_static
-  # rt
   ${LIBPMEMOBJ++_LIBRARIES}
   gflags
   cpp_utility
   cpp_bench
 )
 
-option(PMWCAS_BENCH_OVERRIDE_JEMALLOC "Override entire memory allocation with jemalloc" OFF)
-if(${PMWCAS_BENCH_OVERRIDE_JEMALLOC})
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET jemalloc)
-
-  target_include_directories(pmwcas_bench PRIVATE
-    ${JEMALLOC_INCLUDE_DIRS}
+if(${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS})
+  target_compile_definitions(pmwcas_bench PRIVATE
+    PMEM
+    PMDK
+    DESC_CAP=${PMWCAS_BENCH_TARGET_NUM}
   )
   target_link_libraries(pmwcas_bench PRIVATE
-    PkgConfig::JEMALLOC
+    pmwcas_static
+    rt
+  )
+  target_include_directories(pmwcas_bench PRIVATE
+    "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
+    "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
+    "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
+  )
+else()
+  target_link_libraries(pmwcas_bench PRIVATE
+    #pmwcas
   )
 endif()
 

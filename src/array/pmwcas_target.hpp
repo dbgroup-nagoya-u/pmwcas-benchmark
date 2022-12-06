@@ -29,6 +29,11 @@
 #include <string>
 #include <vector>
 
+// external sources
+#ifdef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+#include "pmwcas.h"
+#endif
+
 // local sources
 #include "array/pmem_array.hpp"
 
@@ -54,9 +59,35 @@ class PMwCASTarget
   /**
    * @brief Construct a new PMwCASTarget object.
    *
-   * @param target_arr the reference to a target array.
+   * @param pmem_dir_str the path to persistent memory for benchmarking.
+   * @param worker_num the number of worker threads.
    */
-  PMwCASTarget(PmemArray &target_arr) : pool_{target_arr.GetPool()}, root_{pool_.root()} {}
+  PMwCASTarget(  //
+      const std::string &pmem_dir_str,
+      const size_t worker_num)
+      : target_arr_{pmem_dir_str}, pool_{target_arr_.GetPool()}, root_{pool_.root()}
+  {
+    // prepare descriptor pool for PMwCAS if needed
+    if constexpr (std::is_same_v<Implementation, PMwCAS>) {
+      const auto &pmwcas_path = GetPath(pmem_dir_str, kPMwCASLayout);
+
+#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+      // not implemented yet
+#else
+      constexpr auto kPoolSize = PMEMOBJ_MIN_POOL * 1024;  // 8GB
+      const uint32_t partition_num = worker_num;
+      const uint32_t pool_capacity = partition_num * 1024;
+
+      ::pmwcas::InitLibrary(
+          pmwcas::PMDKAllocator::Create(pmwcas_path.c_str(), kPMwCASLayout.c_str(), kPoolSize),
+          pmwcas::PMDKAllocator::Destroy,    //
+          pmwcas::LinuxEnvironment::Create,  //
+          pmwcas::LinuxEnvironment::Destroy);
+
+      pmwcas_desc_pool_ = std::make_unique<PMwCAS>(pool_capacity, partition_num);
+#endif
+    }
+  }
 
   /*####################################################################################
    * Public destructors
@@ -92,11 +123,18 @@ class PMwCASTarget
    * Internal member variables
    *##################################################################################*/
 
+  PmemArray target_arr_{};
+
   /// a pmemobj_pool that contains a target array.
   ::pmem::obj::pool<Root> pool_{};
 
   /// a pointer to the root object in a pool.
   ::pmem::obj::persistent_ptr<Root> root_{};
+
+#ifdef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+  /// the pool of PMwCAS descriptors.
+  std::unique_ptr<PMwCAS> pmwcas_desc_pool_{nullptr};
+#endif
 };
 
 /*######################################################################################
@@ -127,6 +165,39 @@ PMwCASTarget<Lock>::Execute(const Operation &ops)
     std::cerr << e.what() << std::endl;
     exit(EXIT_FAILURE);
   }
+}
+
+/**
+ * @brief Specialization for the PMwCAS-based implementation.
+ *
+ * @tparam PMwCAS
+ * @param ops a target PMwCAS operation.
+ */
+template <>
+inline void
+PMwCASTarget<PMwCAS>::Execute(const Operation &ops)
+{
+#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+// not implemented yet
+#else
+  using PMwCASField = ::pmwcas::MwcTargetField<uint64_t>;
+
+  while (true) {
+    auto *desc = pmwcas_desc_pool_->AllocateDescriptor();
+    auto *epoch = pmwcas_desc_pool_->GetEpoch();
+    epoch->Protect();
+    for (size_t i = 0; i < kTargetNum; ++i) {
+      auto *addr = reinterpret_cast<uint64_t *>(&(root_->arr[ops.GetPosition(i)]));
+      const auto old_val = reinterpret_cast<PMwCASField *>(addr)->GetValueProtected();
+      const auto new_val = old_val + 1;
+      desc->AddEntry(addr, old_val, new_val);
+    }
+    auto success = desc->MwCAS();
+    epoch->Unprotect();
+
+    if (success) break;
+  }
+#endif
 }
 
 #endif  // PMWCAS_BENCHMARK_ARRAY_PMWCAS_TARGET_HPP

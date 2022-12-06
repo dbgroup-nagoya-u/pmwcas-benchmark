@@ -4,3 +4,6 @@
 [submodule "external/cpp-benchmark"]
 	path = external/cpp-benchmark
 	url = https://github.com/dbgroup-nagoya-u/cpp-benchmark.git
+[submodule "external/microsoft-pmwcas"]
+	path = external/microsoft-pmwcas
+	url = https://github.com/microsoft/pmwcas.git

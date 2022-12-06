@@ -24,14 +24,30 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
+
+// external sources
+#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+// #include "pmwcas/pmwcas_descriptor_pool.hpp"
+#else
+#include "mwcas/mwcas.h"
+#endif
 
 /*######################################################################################
  * Type aliases for competitors
  *####################################################################################*/
 
-/// an alias for lock-based implementations.
+/// an alias for lock based implementations.
 using Lock = ::pmem::obj::mutex;
+
+#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+/// an alias for our PMwCAS based implementations.
+// using PMwCAS = ::dbgroup::atomic::pmwcas::PMwCASDescriptorPool;
+#else
+/// an alias for microsoft/pmwcas based implementations.
+using PMwCAS = ::pmwcas::DescriptorPool;
+#endif
 
 /*######################################################################################
  * Global constants and enums
@@ -47,6 +63,33 @@ constexpr size_t kElementNum = PMWCAS_BENCH_ELEMENT_NUM;
 constexpr size_t kTargetNum = PMWCAS_BENCH_TARGET_NUM;
 
 /// the layout name for benchmarking with arrays.
-const std::string kArrayBenchLayout = "pmwcas_bench_with_array";
+const std::string kArrayBenchLayout = "array";
+
+#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+/// the layout name for the pool of PMwCAS descriptors.
+const std::string kPMwCASLayout = "pmwcas";
+#else
+/// the layout name for the pool of PMwCAS descriptors.
+const std::string kPMwCASLayout = "microsoft_pmwcas";
+#endif
+
+/*######################################################################################
+ * Global utilities
+ *####################################################################################*/
+
+/**
+ * @param pmem_dir_str the path to persistent memory.
+ * @param layout the name of a layout for pmemobj_pool.
+ * @return the file path for a given layout.
+ */
+auto
+GetPath(  //
+    const std::string &pmem_dir_str,
+    const std::string &layout)  //
+    -> std::string
+{
+  std::filesystem::path pmem_dir_path{pmem_dir_str};
+  return pmem_dir_path.append(layout).native();
+}
 
 #endif  // PMWCAS_BENCHMARK_COMMON_HPP

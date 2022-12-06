@@ -43,6 +43,7 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency.
 DEFINE_bool(init, false, "Initialize all the array elemnts with zeros and exit.");
 DEFINE_bool(show, false, "Show random-sampled elemnts in the array and exit.");
 DEFINE_bool(lock, false, "Use an exclusive lock as a benchmark target.");
+DEFINE_bool(pmwcas, false, "Use a PMwCAS as a benchmark target.");
 
 DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_validator(num_thread, &ValidateNonZero);
@@ -58,20 +59,19 @@ DEFINE_validator(seed, &ValidateRandomSeed);
  *
  * @tparam Implementation an implementation to be benchmarked.
  * @param target_name the output name of a implementation.
- * @param pmem_path the path to persistent memory.
+ * @param pmem_dir_str the path to persistent memory.
  */
 template <class Implementation>
 void
 Run(  //
     const std::string &target_name,
-    const std::string &pmem_path)
+    const std::string &pmem_dir_str)
 {
   using Target_t = PMwCASTarget<Implementation>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Target_t, Operation, OperationEngine>;
 
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
-  PmemArray target_arr{pmem_path};
-  Target_t target{target_arr};
+  Target_t target{pmem_dir_str, FLAGS_num_thread};
   OperationEngine ops_engine{FLAGS_skew_parameter, random_seed};
 
   Bench_t bench{target,      target_name,      ops_engine, FLAGS_num_exec, FLAGS_num_thread,
@@ -97,24 +97,27 @@ main(int argc, char *argv[])
     return 0;
   }
 
-  const std::string pmem_path{argv[1]};
+  const std::string pmem_dir_str{argv[1]};
 
   if (FLAGS_init) {
     std::cout << "Initialize a persitent array with zeros..." << std::endl;
-    PmemArray{pmem_path}.Initialize();
+    PmemArray{pmem_dir_str}.Initialize();
     std::cout << "The persitent array is initialized with zeros." << std::endl;
     return 0;
   }
 
   if (FLAGS_show) {
-    PmemArray{pmem_path}.ShowSampledElements();
+    PmemArray{pmem_dir_str}.ShowSampledElements();
     return 0;
   }
 
   // run benchmark for each implementaton
 
   if (FLAGS_lock) {
-    Run<Lock>("Global Lock", pmem_path);
+    Run<Lock>("Global Lock", pmem_dir_str);
+  }
+  if (FLAGS_pmwcas) {
+    Run<PMwCAS>("PMwCAS", pmem_dir_str);
   }
 
   return 0;

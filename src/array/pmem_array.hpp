@@ -67,14 +67,15 @@ class PmemArray
    *
    * @param path the path of persistent memory for benchmarking.
    */
-  PmemArray(const std::string &path)
+  PmemArray(const std::string &pmem_dir_str)
   {
+    const auto &pmem_array_path = GetPath(pmem_dir_str, kArrayBenchLayout);
     try {
-      if (std::filesystem::exists(path)) {
-        pmem_pool_ = ArrayPool_t::open(path, kArrayBenchLayout);
+      if (std::filesystem::exists(pmem_array_path)) {
+        pmem_pool_ = ArrayPool_t::open(pmem_array_path, kArrayBenchLayout);
       } else {
         constexpr size_t kSize = ((sizeof(PmemRoot) / PMEMOBJ_MIN_POOL) + 2) * PMEMOBJ_MIN_POOL;
-        pmem_pool_ = ArrayPool_t::create(path, kArrayBenchLayout, kSize, CREATE_MODE_RW);
+        pmem_pool_ = ArrayPool_t::create(pmem_array_path, kArrayBenchLayout, kSize, CREATE_MODE_RW);
       }
     } catch (const std::exception &e) {
       std::cerr << e.what() << '\n';
