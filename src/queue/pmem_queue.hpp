@@ -1,4 +1,3 @@
-
 #include <libpmemobj++/p.hpp>
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/make_persistent.hpp>
@@ -20,7 +19,7 @@ class PmemQueue {
    *##################################################################################*/
 
     public:
-    
+
         /**
         * @brief Inserts a new element at the end of the queue.
         *
@@ -77,7 +76,7 @@ class PmemQueue {
 
             return ss.str();
         }
-    
+
     /*####################################################################################
    * Internal member variables
    *##################################################################################*/
@@ -108,5 +107,3 @@ class PmemQueue {
         // The tail of the queue
         ::pmem::obj::persistent_ptr<Node> tail;
 };
-
-
