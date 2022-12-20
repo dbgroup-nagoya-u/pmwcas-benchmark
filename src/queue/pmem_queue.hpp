@@ -1,109 +1,120 @@
+/*
+ * Copyright 2022 Database Group, Nagoya University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef PMWCAS_BENCHMARK_QUEUE_PMEM_QUEUE_HPP
+#define PMWCAS_BENCHMARK_QUEUE_PMEM_QUEUE_HPP
+
+#include <exception>
+#include <libpmemobj++/make_persistent.hpp>
 #include <libpmemobj++/p.hpp>
 #include <libpmemobj++/persistent_ptr.hpp>
-#include <libpmemobj++/make_persistent.hpp>
 #include <libpmemobj++/transaction.hpp>
 #include <libpmemobj++/utils.hpp>
-#include <utility>
-
 #include <sstream>
-#include <exception>
+#include <utility>
+#include <optional>
+
+#include "../common.hpp"
 
 /**
  * @brief Persistent memory list-based queue.
  *
  */
-class PmemQueue {
+class PmemQueue
+{
+ public:
 
-    /*####################################################################################
+  /*####################################################################################
    * Public utilities
    *##################################################################################*/
 
-    public:
+  /**
+   * @brief Inserts a new element at the end of the queue.
+   *
+   */
+  void
+  push(int64_t value)
+  {
+    ::pmem::obj::transaction::run(pool, [this, &value] {
+      auto n = ::pmem::obj::make_persistent<Node>(value, nullptr);
 
-        /**
-        * @brief Inserts a new element at the end of the queue.
-        *
-        */
-        void push(long long int value)
-        {
-            auto pool = pmem::obj::pool_by_vptr(this);
-            ::pmem::obj::transaction::run(pool, [this, &value] {
-                auto n = ::pmem::obj::make_persistent<Node>(value, nullptr);
+      if (head == nullptr) {
+        head = n;
+        tail = n;
+      } else {
+        tail->next = n;
+        tail = n;
+      }
+    });
+  }
 
-                if (head == nullptr) {
-                    head = tail = n;
-                } else {
-                    tail->next = n;
-                    tail = n;
-                }
-            });
-        }
+  /**
+   * @brief Removes the first element in the queue.
+   *
+   */
+  auto
+  pop()
+  {
+    std::optional<int64_t> ret = std::nullopt;
+    ::pmem::obj::transaction::run(pool, [this, &ret] {
+      
+      ret = head->value;
+      auto n = head->next;
 
-        /**
-        * @brief Removes the first element in the queue.
-        *
-        */
-        long long int pop()
-        {
-            long long int ret = 0;
-            auto pool = pmem::obj::pool_by_vptr(this);
-            ::pmem::obj::transaction::run(pool, [this, &ret] {
-                if (head == nullptr)
-                    throw std::runtime_error("Nothing to pop");
+      ::pmem::obj::delete_persistent<Node>(head);
+      head = n;
 
-                ret = head->value;
-                auto n = head->next;
+      if (head == nullptr) {
+        tail = nullptr;
+      }
+    });
 
-                ::pmem::obj::delete_persistent<Node>(head);
-                head = n;
-
-                if (head == nullptr)
-                    tail = nullptr;
-            });
-
-            return ret;
-        }
-
-        /**
-        * @brief Prints the entire contents of the queue.
-        *
-        */
-        std::string show(void) const
-        {
-            std::stringstream ss;
-            for (auto n = head; n != nullptr; n = n->next)
-                ss << n->value << "\n";
-
-            return ss.str();
-        }
-
-    /*####################################################################################
+    return ret;
+  }
+ 
+  /*####################################################################################
    * Internal member variables
    *##################################################################################*/
 
-    private:
-        /**
-        * @brief Internal node definition.
-        */
-        struct Node {
+ private:
 
-            /*!
-            * @brief Constructor.
-            *
-            */
-            Node(long long int val, ::pmem::obj::persistent_ptr<Node> n)
-                : next(std::move(n)), value(std::move(val))
-            {
-            }
+  ::pmem::obj::pool<int64_t> pool;
+  
+  /**
+   * @brief Internal node definition.
+   */
+  struct Node {
+    /*!
+     * @brief Constructor.
+     *
+     */
+    Node(int64_t val, ::pmem::obj::persistent_ptr<Node> n)
+        : next(std::move(n)), value(std::move(val))
+    {
+    }
 
-            // Pointer to the next node
-            ::pmem::obj::persistent_ptr<Node> next;
-            // Value held by this node
-            ::pmem::obj::p<long long int> value;
-        };
+    // Pointer to the next node
+    ::pmem::obj::persistent_ptr<Node> next;
+    // Value held by this node
+    ::pmem::obj::p<int64_t> value;
+  };
 
-        // The head of the queue
-        ::pmem::obj::persistent_ptr<Node> head;
-        // The tail of the queue
-        ::pmem::obj::persistent_ptr<Node> tail;
+  // The head of the queue
+  ::pmem::obj::persistent_ptr<Node> head;
+  // The tail of the queue
+  ::pmem::obj::persistent_ptr<Node> tail;
 };
+
+#endif  // PMWCAS_BENCHMARK_QUEUE_PMEM_QUEUE_HPP
