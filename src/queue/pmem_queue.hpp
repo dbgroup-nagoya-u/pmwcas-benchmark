@@ -16,17 +16,19 @@
 #ifndef PMWCAS_BENCHMARK_QUEUE_PMEM_QUEUE_HPP
 #define PMWCAS_BENCHMARK_QUEUE_PMEM_QUEUE_HPP
 
+// C++ standard libraries
 #include <exception>
+#include <optional>
+#include <sstream>
+#include <utility>
+// external libraries
 #include <libpmemobj++/make_persistent.hpp>
 #include <libpmemobj++/p.hpp>
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/transaction.hpp>
 #include <libpmemobj++/utils.hpp>
-#include <sstream>
-#include <utility>
-#include <optional>
-
-#include "../common.hpp"
+// local sources
+#include "common.hpp"
 
 /**
  * @brief Persistent memory list-based queue.
@@ -35,7 +37,6 @@
 class PmemQueue
 {
  public:
-
   /*####################################################################################
    * Public utilities
    *##################################################################################*/
@@ -74,7 +75,7 @@ class PmemQueue
       auto n = head->next;
 
       ::pmem::obj::delete_persistent<Node>(head);
-      head = n;
+      head = std::move(n);
 
       if (head == nullptr) {
         tail = nullptr;
@@ -83,14 +84,11 @@ class PmemQueue
 
     return ret;
   }
- 
-  /*####################################################################################
-   * Internal member variables
-   *##################################################################################*/
-
+  
  private:
-
-  ::pmem::obj::pool<int64_t> pool;
+  /*####################################################################################
+   * Private classes
+   *##################################################################################*/
   
   /**
    * @brief Internal node definition.
@@ -110,6 +108,12 @@ class PmemQueue
     // Value held by this node
     ::pmem::obj::p<int64_t> value;
   };
+
+  /*####################################################################################
+   * Internal member variables
+   *##################################################################################*/
+
+  ::pmem::obj::pool<int64_t> pool;
 
   // The head of the queue
   ::pmem::obj::persistent_ptr<Node> head;
