@@ -1,0 +1,1 @@
+ADD_PMWCAS_BENCH_TEST("pmem_queue_test")
