@@ -65,6 +65,9 @@ constexpr size_t kTargetNum = PMWCAS_BENCH_TARGET_NUM;
 /// the layout name for benchmarking with arrays.
 const std::string kArrayBenchLayout = "array";
 
+/// the layout name for benchmarking with queues.
+const std::string kQueueBenchLayout = "queue";
+
 #ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
 /// the layout name for the pool of PMwCAS descriptors.
 const std::string kPMwCASLayout = "pmwcas";
