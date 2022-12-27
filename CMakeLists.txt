@@ -23,6 +23,7 @@ set(MICROSOFT_PMWCAS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/microsoft-
 
 set(PMWCAS_BENCH_ELEMENT_NUM "1000000" CACHE STRING "The number of elements in a target array.")
 set(PMWCAS_BENCH_TARGET_NUM "2" CACHE STRING "The maximum number of target words of PMwCAS.")
+set(PMWCAS_BENCH_MAX_THREAD_NUM "256" CACHE STRING "The maximum number of threads for benchmarking.")
 
 #--------------------------------------------------------------------------------------#
 # Configure PMDK
@@ -43,6 +44,10 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-utility")
 
 # our C++ benchmarker
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
+
+# our GC
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/memory-manager")
+set(MEMORY_MANAGER_USE_PERSISTENT_MEMORY "ON" CACHE STRING "" FORCE)
 
 #--------------------------------------------------------------------------------------#
 # Configure Microsoft's PMwCAS if needed
@@ -85,6 +90,7 @@ target_compile_options(pmwcas_bench PRIVATE
 target_compile_definitions(pmwcas_bench PRIVATE
   PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
   PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
+  PMWCAS_BENCH_MAX_THREAD_NUM=${PMWCAS_BENCH_MAX_THREAD_NUM}
   $<$<BOOL:${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS}>:PMWCAS_BENCH_USE_MICROSOFT_PMWCAS>
 )
 target_include_directories(pmwcas_bench PRIVATE
@@ -96,6 +102,7 @@ target_link_libraries(pmwcas_bench PRIVATE
   gflags
   cpp_utility
   cpp_bench
+  dbgroup::memory_manager
 )
 
 if(${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS})

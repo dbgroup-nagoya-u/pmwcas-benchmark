@@ -1,0 +1,1 @@
+ADD_PMWCAS_BENCH_TEST("queue_multi_thread_test")

@@ -48,23 +48,43 @@ function(ADD_PMWCAS_BENCH_TEST PMWCAS_BENCH_TEST_TARGET)
   target_compile_definitions(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
     PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
     PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
+    PMWCAS_BENCH_MAX_THREAD_NUM=${PMWCAS_BENCH_MAX_THREAD_NUM}
+    $<$<BOOL:${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS}>:PMWCAS_BENCH_USE_MICROSOFT_PMWCAS>
   )
   target_include_directories(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
     "${PMWCAS_BENCH_SOURCE_DIR}/src"
     "${LIBPMEMOBJ++_INCLUDE_DIRS}"
-    # "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
-    # "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
-    # "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
   )
   target_link_libraries(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
-    # pmwcas
-    # pmwcas_static
-    # rt
     ${LIBPMEMOBJ++_LIBRARIES}
     cpp_utility
+    dbgroup::memory_manager
     gtest_main
   )
+
+  if(${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS})
+    target_compile_definitions(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
+      PMEM
+      PMDK
+      DESC_CAP=${PMWCAS_BENCH_TARGET_NUM}
+    )
+    target_link_libraries(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
+      pmwcas_static
+      rt
+    )
+    target_include_directories(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
+      "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
+      "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
+      "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
+    )
+  else()
+    target_link_libraries(${PMWCAS_BENCH_TEST_TARGET} PRIVATE
+      #pmwcas
+    )
+  endif()
+
   add_test(NAME ${PMWCAS_BENCH_TEST_TARGET} COMMAND $<TARGET_FILE:${PMWCAS_BENCH_TEST_TARGET}>)
 endfunction()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/array")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/queue")

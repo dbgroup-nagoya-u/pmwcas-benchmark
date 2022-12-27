@@ -62,6 +62,15 @@ constexpr size_t kElementNum = PMWCAS_BENCH_ELEMENT_NUM;
 /// the maximum number of PMwCAS targets.
 constexpr size_t kTargetNum = PMWCAS_BENCH_TARGET_NUM;
 
+/// @brief The maximum number of threads for benchmarking.
+constexpr size_t kMaxThreadNum = PMWCAS_BENCH_MAX_THREAD_NUM;
+
+constexpr size_t kGCInterval = 1E5;
+
+constexpr size_t kThreadNum = 1;
+
+constexpr size_t kNullPtr = 0;
+
 /// the layout name for benchmarking with arrays.
 const std::string kArrayBenchLayout = "array";
 
