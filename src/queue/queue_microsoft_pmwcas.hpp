@@ -76,44 +76,18 @@ class QueueWithMicrosoftPMwCAS
   {
     // prepare a pool instance
     const auto &pool_path = GetPath(pmem_dir_str, kQueueLayout);
-    try {
-      if (std::filesystem::exists(pool_path)) {
-        pool_ = ::pmem::obj::pool<Root>::open(pool_path, kQueueLayout);
-        root_ = pool_.root();
-        pool_uuid_ = root_.raw().pool_uuid_lo;
-      } else {
-        constexpr size_t kSize = PMEMOBJ_MIN_POOL * 256 * 2;  // 2GB
-        pool_ = ::pmem::obj::pool<Root>::create(pool_path, kQueueLayout, kSize, CREATE_MODE_RW);
-        root_ = pool_.root();
-        pool_uuid_ = root_.raw().pool_uuid_lo;
-
-        // create a dummy node
-        ::pmem::obj::flat_transaction::run(pool_, [&] {  //
-          pmemobj_tx_add_range(root_.raw(), 0, 2 * sizeof(PMEMoid));
-          root_->head = ::pmem::obj::make_persistent<Node_t>(0, pool_uuid_).raw();
-          root_->tail = root_->head;
-        });
-      }
-    } catch (const std::exception &e) {
-      std::cerr << e.what() << std::endl;
-      exit(EXIT_FAILURE);
+    if (std::filesystem::exists(pool_path)) {
+      RecoverQueuePool(pool_path);
+    } else {
+      CreateQueuePool(pool_path);
     }
-
-    // prepare a descriptor pool for PMwCAS
-    const auto &pmwcas_path = GetPath(pmem_dir_str, kPMwCASLayout);
-    constexpr auto kPoolSize = PMEMOBJ_MIN_POOL * 1024;  // 8GB
-    const uint32_t partition_num = kMaxThreadNum;
-    const uint32_t pool_capacity = partition_num * 1024;
-    ::pmwcas::InitLibrary(
-        pmwcas::PMDKAllocator::Create(pmwcas_path.c_str(), kPMwCASLayout, kPoolSize),
-        pmwcas::PMDKAllocator::Destroy,    //
-        pmwcas::LinuxEnvironment::Create,  //
-        pmwcas::LinuxEnvironment::Destroy);
-    pmwcas_desc_pool_ = std::make_unique<PMwCAS>(pool_capacity, partition_num);
 
     // prepare a garbage collector
     gc_.SetHeadAddrOnPMEM<NodeTarget>(&(pool_.root()->gc_head));
     gc_.StartGC();
+
+    // prepare a descriptor pool for PMwCAS
+    InitializeMicrosoftPMwCAS(pmem_dir_str);
   }
 
   /*####################################################################################
@@ -122,9 +96,9 @@ class QueueWithMicrosoftPMwCAS
 
   ~QueueWithMicrosoftPMwCAS()
   {
+    ::pmwcas::UninitLibrary();
     gc_.StopGC();
     pool_.close();
-    ::pmwcas::UninitLibrary();
   }
 
   /*####################################################################################
@@ -245,6 +219,84 @@ class QueueWithMicrosoftPMwCAS
   };
 
   /*####################################################################################
+   * Internal utilities for initialization and recovery
+   *##################################################################################*/
+
+  /**
+   * @brief Create a new pool for a persistent queue.
+   *
+   * @param pool_path the path of a pool.
+   */
+  void
+  CreateQueuePool(const std::string &pool_path)
+  {
+    try {
+      constexpr size_t kSize = PMEMOBJ_MIN_POOL * 256;  // 2GB
+      pool_ = ::pmem::obj::pool<Root>::create(pool_path, kQueueLayout, kSize, CREATE_MODE_RW);
+      root_ = pool_.root();
+      pool_uuid_ = root_.raw().pool_uuid_lo;
+
+      // create a dummy node
+      ::pmem::obj::flat_transaction::run(pool_, [&] {  //
+        pmemobj_tx_add_range(root_.raw(), 0, 2 * sizeof(PMEMoid));
+        root_->head = ::pmem::obj::make_persistent<Node_t>(0, pool_uuid_).raw();
+        root_->tail = root_->head;
+      });
+    } catch (const std::exception &e) {
+      std::cerr << e.what() << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  /**
+   * @brief Open and recover the pool of a persistent queue.
+   *
+   * @param pool_path the path of a pool.
+   */
+  void
+  RecoverQueuePool(const std::string &pool_path)
+  {
+    try {
+      pool_ = ::pmem::obj::pool<Root>::open(pool_path, kQueueLayout);
+      root_ = pool_.root();
+      pool_uuid_ = root_.raw().pool_uuid_lo;
+
+      // release temporary nodes if exist due to power failure
+      for (size_t i = 0; i < kMaxThreadNum; ++i) {
+        auto &&tmp_node = root_->tmp_nodes[i];
+        if (tmp_node != nullptr) {
+          ::pmem::obj::flat_transaction::run(pool_, [&] {  //
+            ::pmem::obj::delete_persistent<Node_t>(tmp_node);
+          });
+        }
+      }
+    } catch (const std::exception &e) {
+      std::cerr << e.what() << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  /**
+   * @brief Initialize a pool for microsoft/pmwcas.
+   *
+   * @param pmem_dir_str the path of persistent memory for benchmarking.
+   */
+  void
+  InitializeMicrosoftPMwCAS(const std::string &pmem_dir_str)
+  {
+    const auto &pmwcas_path = GetPath(pmem_dir_str, kPMwCASLayout);
+    constexpr auto kPoolSize = PMEMOBJ_MIN_POOL * kMaxThreadNum;
+    const uint32_t partition_num = kMaxThreadNum;
+    const uint32_t pool_capacity = partition_num * 1024;
+    ::pmwcas::InitLibrary(
+        pmwcas::PMDKAllocator::Create(pmwcas_path.c_str(), kPMwCASLayout, kPoolSize),
+        pmwcas::PMDKAllocator::Destroy,    //
+        pmwcas::LinuxEnvironment::Create,  //
+        pmwcas::LinuxEnvironment::Destroy);
+    pmwcas_desc_pool_ = std::make_unique<PMwCAS>(pool_capacity, partition_num);
+  }
+
+  /*####################################################################################
    * Internal utility functions
    *##################################################################################*/
 
@@ -274,8 +326,7 @@ class QueueWithMicrosoftPMwCAS
         if (!is_reserved) {
           reserve_arr_[i].compare_exchange_strong(is_reserved, true, std::memory_order_relaxed);
           if (!is_reserved) {
-            auto &&root = pool_.root();
-            ptr = std::make_unique<ElementHolder_t>(i, reserve_arr_, &(root->tmp_nodes[i]));
+            ptr = std::make_unique<ElementHolder_t>(i, reserve_arr_, &(root_->tmp_nodes[i]));
             break;
           }
         }
