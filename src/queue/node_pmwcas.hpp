@@ -25,6 +25,8 @@
 
 /**
  * @brief A class for representing nodes in a linked list.
+ *
+ * @tparam T a type to be stored.
  */
 template <class T>
 class Node
@@ -70,6 +72,10 @@ class Node
   PMEMoid next{OID_NULL};
 };
 
+/**
+ * @brief A class for registering Node objects with GC.
+ *
+ */
 struct NodeTarget {
   // do not call destructor
   using T = void;

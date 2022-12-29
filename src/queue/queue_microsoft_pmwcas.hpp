@@ -70,11 +70,9 @@ class QueueWithMicrosoftPMwCAS
   /**
    * @brief Construct a new QueueWithMicrosoftPMwCAS object.
    *
-   * @param path the path of persistent memory for benchmarking.
+   * @param pmem_dir_str the path of persistent memory for benchmarking.
    */
-  QueueWithMicrosoftPMwCAS(  //
-      const std::string &pmem_dir_str,
-      const size_t worker_num)
+  QueueWithMicrosoftPMwCAS(const std::string &pmem_dir_str)
   {
     // prepare a pool instance
     const auto &pool_path = GetPath(pmem_dir_str, kQueueLayout);
@@ -104,7 +102,7 @@ class QueueWithMicrosoftPMwCAS
     // prepare a descriptor pool for PMwCAS
     const auto &pmwcas_path = GetPath(pmem_dir_str, kPMwCASLayout);
     constexpr auto kPoolSize = PMEMOBJ_MIN_POOL * 1024;  // 8GB
-    const uint32_t partition_num = worker_num;
+    const uint32_t partition_num = kMaxThreadNum;
     const uint32_t pool_capacity = partition_num * 1024;
     ::pmwcas::InitLibrary(
         pmwcas::PMDKAllocator::Create(pmwcas_path.c_str(), kPMwCASLayout, kPoolSize),
@@ -126,6 +124,7 @@ class QueueWithMicrosoftPMwCAS
   {
     gc_.StopGC();
     pool_.close();
+    ::pmwcas::UninitLibrary();
   }
 
   /*####################################################################################
@@ -141,12 +140,15 @@ class QueueWithMicrosoftPMwCAS
   {
     // create a new node
     auto *tmp_node_addr = ReserveNodeAddress();
-    try {
-      ::pmem::obj::flat_transaction::run(pool_, [&] {  //
-        *tmp_node_addr = ::pmem::obj::make_persistent<Node_t>(value, pool_uuid_);
-      });
-    } catch (const std::exception &e) {
-      std::cerr << e.what() << std::endl;
+    gc_.GetPageIfPossible<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
+    if (*tmp_node_addr == nullptr) {
+      try {
+        ::pmem::obj::flat_transaction::run(pool_, [&] {  //
+          *tmp_node_addr = ::pmem::obj::make_persistent<Node_t>(value, pool_uuid_);
+        });
+      } catch (const std::exception &e) {
+        std::cerr << e.what() << std::endl;
+      }
     }
 
     // insert the new node by using PMwCAS
@@ -224,6 +226,10 @@ class QueueWithMicrosoftPMwCAS
    * Internal classes
    *##################################################################################*/
 
+  /**
+   * @brief A root class for ::pmem::obj::pool.
+   *
+   */
   struct Root {
     /// @brief The head of the queue.
     PMEMoid head{OID_NULL};
@@ -242,6 +248,10 @@ class QueueWithMicrosoftPMwCAS
    * Internal utility functions
    *##################################################################################*/
 
+  /**
+   * @param addr a target memory address.
+   * @return a value of PMEMoid.off in the given address.
+   */
   static auto
   ReadNodeProtected(size_t *addr)  //
       -> size_t
@@ -249,6 +259,9 @@ class QueueWithMicrosoftPMwCAS
     return reinterpret_cast<PMwCASField *>(addr)->GetValueProtected();
   }
 
+  /**
+   * @return the reserved address for node pointers.
+   */
   auto
   ReserveNodeAddress()  //
       -> ::pmem::obj::persistent_ptr<Node_t> *
@@ -276,10 +289,13 @@ class QueueWithMicrosoftPMwCAS
    * Internal member variables
    *##################################################################################*/
 
+  /// @brief A pool for node objects on persistent memopry.
   ::pmem::obj::pool<Root> pool_{};
 
+  /// @brief A root pointer in the pool.
   ::pmem::obj::persistent_ptr<Root> root_{nullptr};
 
+  /// @brief The UUID of the pool.
   size_t pool_uuid_{kNullPtr};
 
   /// @brief A garbage collector for nodes.

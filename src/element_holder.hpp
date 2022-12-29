@@ -18,6 +18,11 @@
 #include <atomic>
 #include <memory>
 
+/**
+ * @brief A class for releasing the reserved element in destructor.
+ *
+ * @tparam T a target element.
+ */
 template <class T>
 class ElementHolder
 {
@@ -26,6 +31,13 @@ class ElementHolder
    * Public constructors and assignment operators
    *##################################################################################*/
 
+  /**
+   * @brief Construct a new ElementHolder object.
+   *
+   * @param pos the position of a reserved element.
+   * @param reserved_arr the reference to a reservation array.
+   * @param element the element to be stored.
+   */
   ElementHolder(  //
       const size_t pos,
       const std::shared_ptr<std::atomic_bool[]> &reserved_arr,
@@ -36,6 +48,7 @@ class ElementHolder
 
   ElementHolder(const ElementHolder &) = delete;
   ElementHolder(ElementHolder &&) = delete;
+
   auto operator=(const ElementHolder &) -> ElementHolder & = delete;
   auto operator=(ElementHolder &&) -> ElementHolder & = delete;
 
@@ -49,6 +62,9 @@ class ElementHolder
    * Public getters
    *##################################################################################*/
 
+  /**
+   * @return the reference to the stored element.
+   */
   constexpr auto
   Get()  //
       -> T &
@@ -61,12 +77,12 @@ class ElementHolder
    * Internal member variables
    *##################################################################################*/
 
-  /// the position of a descriptor in a pool.
+  /// @brief The position of a descriptor in a pool.
   size_t pos_{0};
 
-  /// an actual reservation flag for this object.
+  /// @brief An actual reservation flag for this object.
   std::shared_ptr<std::atomic_bool[]> reserved_arr_{nullptr};
 
-  /// the hold element.
+  /// @brief The hold element.
   T element_{};
 };

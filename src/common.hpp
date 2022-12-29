@@ -65,10 +65,13 @@ constexpr size_t kTargetNum = PMWCAS_BENCH_TARGET_NUM;
 /// @brief The maximum number of threads for benchmarking.
 constexpr size_t kMaxThreadNum = PMWCAS_BENCH_MAX_THREAD_NUM;
 
+/// @brief The interval of GC threads in micro seconds.
 constexpr size_t kGCInterval = 1E5;
 
+/// @brief The number of GC threads.
 constexpr size_t kThreadNum = 1;
 
+/// @brief The NULL value for PMEMoid.off.
 constexpr size_t kNullPtr = 0;
 
 /// the layout name for benchmarking with arrays.
