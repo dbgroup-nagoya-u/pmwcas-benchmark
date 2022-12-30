@@ -33,10 +33,8 @@
 
 // external sources
 #include "memory/epoch_based_gc.hpp"
-
-#ifdef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+#include "mwcas/mwcas.h"
 #include "pmwcas.h"
-#endif
 
 // local sources
 #include "common.hpp"
@@ -83,8 +81,9 @@ class QueueWithMicrosoftPMwCAS
     }
 
     // prepare a garbage collector
-    gc_.SetHeadAddrOnPMEM<NodeTarget>(&(pool_.root()->gc_head));
-    gc_.StartGC();
+    gc_ = std::make_unique<GC_t>(kGCInterval, kGCThreadNum);
+    gc_->SetHeadAddrOnPMEM<NodeTarget>(&(pool_.root()->gc_head));
+    gc_->StartGC();
 
     // prepare a descriptor pool for PMwCAS
     InitializeMicrosoftPMwCAS(pmem_dir_str);
@@ -97,7 +96,7 @@ class QueueWithMicrosoftPMwCAS
   ~QueueWithMicrosoftPMwCAS()
   {
     ::pmwcas::UninitLibrary();
-    gc_.StopGC();
+    gc_ = nullptr;
     pool_.close();
   }
 
@@ -114,7 +113,7 @@ class QueueWithMicrosoftPMwCAS
   {
     // create a new node
     auto *tmp_node_addr = ReserveNodeAddress();
-    gc_.GetPageIfPossible<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
+    gc_->GetPageIfPossible<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
     if (*tmp_node_addr == nullptr) {
       try {
         ::pmem::obj::flat_transaction::run(pool_, [&] {  //
@@ -152,7 +151,7 @@ class QueueWithMicrosoftPMwCAS
   Pop()  //
       -> std::optional<T>
   {
-    [[maybe_unused]] const auto &gc_guard = gc_.CreateEpochGuard();
+    [[maybe_unused]] const auto &gc_guard = gc_->CreateEpochGuard();
 
     // prepare a temporary region for a node to be removed
     auto *tmp_node_addr = ReserveNodeAddress();
@@ -178,7 +177,7 @@ class QueueWithMicrosoftPMwCAS
 
       if (desc->MwCAS()) {
         // the head node has been popped, so remove it and return its content
-        gc_.AddGarbage<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
+        gc_->AddGarbage<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
         head_node = ::pmem::obj::persistent_ptr<Node_t>{PMEMoid{pool_uuid_, new_head}};
         return head_node->value;
       }
@@ -293,7 +292,7 @@ class QueueWithMicrosoftPMwCAS
         pmwcas::PMDKAllocator::Destroy,    //
         pmwcas::LinuxEnvironment::Create,  //
         pmwcas::LinuxEnvironment::Destroy);
-    pmwcas_desc_pool_ = std::make_unique<PMwCAS>(pool_capacity, partition_num);
+    pmwcas_desc_pool_ = std::make_unique<::pmwcas::DescriptorPool>(pool_capacity, partition_num);
   }
 
   /*####################################################################################
@@ -350,10 +349,10 @@ class QueueWithMicrosoftPMwCAS
   size_t pool_uuid_{kNullPtr};
 
   /// @brief A garbage collector for nodes.
-  GC_t gc_{kGCInterval, kThreadNum};
+  std::unique_ptr<GC_t> gc_{nullptr};
 
   /// @brief The pool of PMwCAS descriptors.
-  std::unique_ptr<PMwCAS> pmwcas_desc_pool_{nullptr};
+  std::unique_ptr<::pmwcas::DescriptorPool> pmwcas_desc_pool_{nullptr};
 
   /// @brief An array representing the occupied state of the descriptor pool
   std::shared_ptr<std::atomic_bool[]> reserve_arr_{new std::atomic_bool[kMaxThreadNum]};

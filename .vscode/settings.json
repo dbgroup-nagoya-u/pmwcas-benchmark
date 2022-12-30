@@ -1,4 +1,17 @@
 {
+  // editor settings
+  "editor.rulers": [
+    88,
+    100
+  ],
+  "editor.renderControlCharacters": true,
+  "editor.renderWhitespace": "all",
+  "editor.formatOnSave": false,
+  "editor.tabSize": 2,
+  // files settings
+  "files.insertFinalNewline": false,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": false,
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
@@ -13,22 +26,29 @@
     "**/node_modules/*/**": true,
     "**/.hg/store/**": true,
   },
+  // unit test settings
   "testMate.cpp.test.runtimeLimit": 60,
   "testMate.cpp.test.executables": "build/**/test/*_test",
-  "[cmake]": {
-    "editor.formatOnPaste": false,
-    "editor.formatOnSave": false,
+  // cmake settings
+  "cmake.configureOnOpen": true,
+  "cmake.buildDirectory": "${workspaceRoot}/build/${buildType}",
+  "cmake.generator": "Ninja",
+  "cmake.debugConfig": {
+    "args": [
+      // "--num-thread=1",
+      // "--pmwcas",
+      // "/pmem_tmp/${env:USERNAME}",
+    ]
   },
-  "cpplint.lineLength": 100,
-  "cpplint.filters": [
-    "-readability/fn_size",
-    "-whitespace/braces",
-    "-build/c++11",
-    "-whitespace/newline",
-    "-runtime/references",
-    "-build/include_subdir",
-    "-build/header_guard"
-  ],
+  // Markdown settings
+  "[markdown]": {
+    "editor.tabSize": 4,
+    "files.trimTrailingWhitespace": false,
+  },
+  "markdown.extension.list.indentationSize": "inherit",
+  "markdown.extension.tableFormatter.enabled": false,
+  "markdown.extension.toc.levels": "1..3",
+  // local dictionary
   "cSpell.words": [
     "alignas",
     "AOPT",

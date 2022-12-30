@@ -30,7 +30,7 @@ set(
 # Build Unit Tests
 #--------------------------------------------------------------------------------------#
 
-  # define function to add unit tests in the same format
+# define function to add unit tests in the same format
 function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
   add_executable(${DBGROUP_TEST_TARGET}
     "${CMAKE_CURRENT_SOURCE_DIR}/${DBGROUP_TEST_TARGET}.cpp"
@@ -54,7 +54,7 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
     $<$<BOOL:${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS}>:PMWCAS_BENCH_USE_MICROSOFT_PMWCAS>
   )
   target_include_directories(${DBGROUP_TEST_TARGET} PRIVATE
-    "${PMWCAS_BENCH_SOURCE_DIR}/src"
+    "${PROJECT_SOURCE_DIR}/src"
     "${LIBPMEMOBJ++_INCLUDE_DIRS}"
   )
   target_link_libraries(${DBGROUP_TEST_TARGET} PRIVATE
