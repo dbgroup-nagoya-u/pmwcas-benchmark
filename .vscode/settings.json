@@ -57,6 +57,7 @@
     "DBUILD",
     "DCMAKE",
     "DMWCAS",
+    "DPMWCAS",
     "gflags",
     "GLOG",
     "gtest",
