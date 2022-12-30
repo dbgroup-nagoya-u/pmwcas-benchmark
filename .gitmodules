@@ -7,3 +7,6 @@
 [submodule "external/microsoft-pmwcas"]
 	path = external/microsoft-pmwcas
 	url = https://github.com/microsoft/pmwcas.git
+[submodule "external/memory-manager"]
+	path = external/memory-manager
+	url = https://github.com/dbgroup-nagoya-u/memory-manager.git

@@ -22,7 +22,7 @@
 #include <array>
 
 // local sources
-#include "common.hpp"
+#include "array/definition.hpp"
 
 class Operation
 {

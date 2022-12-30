@@ -14,20 +14,41 @@
  * limitations under the License.
  */
 
-// system headers
-#include <gflags/gflags.h>
-
 // C++ standard libraries
 #include <string>
 
-// external sources
+// external system libraries
+#include <gflags/gflags.h>
+
+// external libraries
 #include "benchmark/benchmarker.hpp"
 
 // local sources
-#include "array/operation_engine.hpp"
-#include "array/pmem_array.hpp"
-#include "array/pmwcas_target.hpp"
 #include "clo_validaters.hpp"
+#include "queue/bench_target.hpp"
+#include "queue/operation_engine.hpp"
+
+// local sources
+#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+// #include "queue/queue_pmwcas.hpp"
+#else
+#include "queue/queue_microsoft_pmwcas.hpp"
+#endif
+
+/*######################################################################################
+ * Type aliases for competitors
+ *####################################################################################*/
+
+/// an alias for lock based implementations.
+// using Lock = QueueWithLock<uint64_t>;
+
+#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+/// an alias for our PMwCAS based implementations.
+// using PMwCAS = QueueWithPMwCAS<uint64_t>;
+#else
+/// an alias for microsoft/pmwcas based implementations.
+using PMwCAS = QueueWithMicrosoftPMwCAS<uint64_t>;
+#endif
 
 /*######################################################################################
  * Command-line options
@@ -35,19 +56,15 @@
 
 DEFINE_uint64(num_exec, 1000000, "The number of PMwCAS operations for each worker.");
 DEFINE_uint64(num_thread, 8, "The number of worker threads for benchmarking.");
-DEFINE_double(skew_parameter, 0, "A skew parameter (based on Zipf's law).");
 DEFINE_string(seed, "", "A random seed to control reproducibility.");
 DEFINE_uint64(timeout, 10, "Seconds to timeout");
 DEFINE_bool(csv, false, "Output benchmark results as CSV format.");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency.");
-DEFINE_bool(init, false, "Initialize all the array elemnts with zeros and exit.");
-DEFINE_bool(show, false, "Show random-sampled elemnts in the array and exit.");
 DEFINE_bool(lock, false, "Use an exclusive lock as a benchmark target.");
 DEFINE_bool(pmwcas, false, "Use a PMwCAS as a benchmark target.");
 
 DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_validator(num_thread, &ValidateNonZero);
-DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 DEFINE_validator(seed, &ValidateRandomSeed);
 
 /*######################################################################################
@@ -57,23 +74,35 @@ DEFINE_validator(seed, &ValidateRandomSeed);
 /**
  * @brief Run procedures for benchmarking with a given implementation.
  *
- * @tparam Implementation an implementation to be benchmarked.
+ * @tparam Queue an implementation to be benchmarked.
  * @param target_name the output name of a implementation.
  * @param pmem_dir_str the path to persistent memory.
  */
-template <class Implementation>
+template <class Queue>
 void
 Run(  //
     const std::string &target_name,
     const std::string &pmem_dir_str)
 {
-  using Target_t = PMwCASTarget<Implementation>;
+  using Target_t = BenchTarget<Queue>;
+  using Operation = std::optional<uint64_t>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Target_t, Operation, OperationEngine>;
 
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
-  Target_t target{pmem_dir_str, FLAGS_num_thread};
-  OperationEngine ops_engine{FLAGS_skew_parameter, random_seed};
 
+  {  // initialize a persitent queue with a thousand elements
+    Queue queue{pmem_dir_str};
+    while (queue.Pop()) {
+      // remove all the elements
+    }
+    for (size_t i = 0; i < 1E3; ++i) {
+      queue.Push(i);
+    }
+  }
+
+  // run benchmark
+  Target_t target{pmem_dir_str};
+  OperationEngine ops_engine{};
   Bench_t bench{target,      target_name,      ops_engine, FLAGS_num_exec, FLAGS_num_thread,
                 random_seed, FLAGS_throughput, FLAGS_csv,  FLAGS_timeout};
   bench.Run();
@@ -89,33 +118,21 @@ main(int argc, char *argv[])
   constexpr auto kRemoveParsedFlags = true;
 
   // parse command line options
-  gflags::SetUsageMessage("measures throughput/latency of PMwCAS implementations.");
+  gflags::SetUsageMessage("measures throughput/latency of persistent queues.");
   gflags::ParseCommandLineFlags(&argc, &argv, kRemoveParsedFlags);
 
   if (argc < 2) {
-    std::cerr << "Specify a path to be stored a persistent array." << std::endl;
+    std::cerr << "NOTE: Specify a path to be stored a persistent queue." << std::endl;
     return 0;
   }
 
   const std::string pmem_dir_str{argv[1]};
 
-  if (FLAGS_init) {
-    std::cout << "Initialize a persitent array with zeros..." << std::endl;
-    PmemArray{pmem_dir_str}.Initialize();
-    std::cout << "The persitent array is initialized with zeros." << std::endl;
-    return 0;
-  }
-
-  if (FLAGS_show) {
-    PmemArray{pmem_dir_str}.ShowSampledElements();
-    return 0;
-  }
-
   // run benchmark for each implementaton
 
-  if (FLAGS_lock) {
-    Run<Lock>("Global Lock", pmem_dir_str);
-  }
+  // if (FLAGS_lock) {
+  //   Run<Lock>("Global Lock", pmem_dir_str);
+  // }
   if (FLAGS_pmwcas) {
     Run<PMwCAS>("PMwCAS", pmem_dir_str);
   }

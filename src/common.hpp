@@ -17,37 +17,12 @@
 #ifndef PMWCAS_BENCHMARK_COMMON_HPP
 #define PMWCAS_BENCHMARK_COMMON_HPP
 
-// system headers
-#include <libpmemobj++/mutex.hpp>
-
 // C++ standard libraries
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
-
-// external sources
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
-// #include "pmwcas/pmwcas_descriptor_pool.hpp"
-#else
-#include "mwcas/mwcas.h"
-#endif
-
-/*######################################################################################
- * Type aliases for competitors
- *####################################################################################*/
-
-/// an alias for lock based implementations.
-using Lock = ::pmem::obj::mutex;
-
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
-/// an alias for our PMwCAS based implementations.
-// using PMwCAS = ::dbgroup::atomic::pmwcas::PMwCASDescriptorPool;
-#else
-/// an alias for microsoft/pmwcas based implementations.
-using PMwCAS = ::pmwcas::DescriptorPool;
-#endif
 
 /*######################################################################################
  * Global constants and enums
@@ -56,22 +31,17 @@ using PMwCAS = ::pmwcas::DescriptorPool;
 /// a file permission for pmemobj_pool.
 #define CREATE_MODE_RW (S_IWUSR | S_IRUSR)
 
-/// the number of elements in a target array.
-constexpr size_t kElementNum = PMWCAS_BENCH_ELEMENT_NUM;
+/// @brief The maximum number of threads for benchmarking.
+constexpr size_t kMaxThreadNum = PMWCAS_BENCH_MAX_THREAD_NUM;
 
-/// the maximum number of PMwCAS targets.
-constexpr size_t kTargetNum = PMWCAS_BENCH_TARGET_NUM;
+/// @brief The interval of GC threads in micro seconds.
+constexpr size_t kGCInterval = 1E5;
 
-/// the layout name for benchmarking with arrays.
-const std::string kArrayBenchLayout = "array";
+/// @brief The number of GC threads.
+constexpr size_t kGCThreadNum = 1;
 
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
-/// the layout name for the pool of PMwCAS descriptors.
-const std::string kPMwCASLayout = "pmwcas";
-#else
-/// the layout name for the pool of PMwCAS descriptors.
-const std::string kPMwCASLayout = "microsoft_pmwcas";
-#endif
+/// @brief The NULL value for PMEMoid.off.
+constexpr size_t kNullPtr = 0;
 
 /*######################################################################################
  * Global utilities

@@ -32,6 +32,9 @@
 #include <string>
 #include <vector>
 
+// local sources
+#include "array/definition.hpp"
+
 /**
  * @brief A class to deal with MwCAS target data and algorthms.
  *
@@ -166,6 +169,13 @@ class PmemArray
   }
 
  private:
+  /*####################################################################################
+   * Internal classes
+   *##################################################################################*/
+
+  /// the layout name for benchmarking with arrays.
+  static constexpr char kArrayBenchLayout[] = "array";
+
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
