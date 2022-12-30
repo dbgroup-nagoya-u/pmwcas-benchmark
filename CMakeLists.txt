@@ -23,6 +23,7 @@ set(MICROSOFT_PMWCAS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/microsoft-
 set(PMWCAS_BENCH_ELEMENT_NUM "1000000" CACHE STRING "The number of elements in a target array.")
 set(PMWCAS_BENCH_TARGET_NUM "2" CACHE STRING "The maximum number of target words of PMwCAS.")
 set(PMWCAS_BENCH_MAX_THREAD_NUM "256" CACHE STRING "The maximum number of threads for benchmarking.")
+option(PMWCAS_BENCH_USE_MICROSOFT_PMWCAS "Use microsoft/pmwcas as a PMwCAS implementation." OFF)
 
 #--------------------------------------------------------------------------------------#
 # Configure PMDK
@@ -52,7 +53,6 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/memory-manager")
 # Configure Microsoft's PMwCAS if needed
 #--------------------------------------------------------------------------------------#
 
-option(PMWCAS_BENCH_USE_MICROSOFT_PMWCAS "Use microsoft/pmwcas as a PMwCAS implementation." OFF)
 if(${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS})
   # prevent building Google libraries and unit tests
   set(GOOGLE_FRAMEWORK OFF CACHE BOOL "" FORCE)

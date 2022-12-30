@@ -1,4 +1,4 @@
-name: Ubuntu-20.04
+name: Ubuntu-22.04
 
 on:
   push:
@@ -9,35 +9,38 @@ on:
 env:
   BUILD_TYPE: Release
 
-jobs:
-  unit_test:
-    runs-on: ubuntu-20.04
-    steps:
+# jobs:
+#   unit_test:
+#     strategy:
+#       matrix:
+#         use_microsoft_pmwcas: [OFF]
+#     runs-on: ubuntu-22.04
+#     steps:
 
-    - name: Clone Main Repository
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
-        ssh-key: ${{secrets.SSH_KEY_FOR_ACTIONS}}
-        persist-credentials: false
+#     - name: Clone Main Repository
+#       uses: actions/checkout@v2
+#       with:
+#         submodules: recursive
+#         ssh-key: ${{secrets.SSH_KEY_FOR_ACTIONS}}
+#         persist-credentials: false
 
-    - name: Create Build Environment
-      shell: bash
-      run: |
-        sudo apt-get install -y libgflags-dev libnuma-dev libpmemobj-cpp-dev
-        cmake -E make_directory ${{github.workspace}}/build
+#     - name: Create Build Environment
+#       shell: bash
+#       run: |
+#         sudo apt-get install -y libgflags-dev libnuma-dev libpmemobj-dev libpmemobj-cpp-dev
+#         cmake -E make_directory ${{github.workspace}}/build
 
-    - name: Configure CMake
-      shell: bash
-      working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPMWCAS_BENCH_BUILD_TESTS=ON
+#     - name: Configure CMake
+#       shell: bash
+#       working-directory: ${{github.workspace}}/build
+#       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPMWCAS_BENCH_USE_MICROSOFT_PMWCAS=${{matrix.use_microsoft_pmwcas}} -DPMWCAS_BENCH_BUILD_TESTS=ON
 
-    - name: Build
-      shell: bash
-      working-directory: ${{github.workspace}}/build
-      run: cmake --build . --parallel 2 --config $BUILD_TYPE
+#     - name: Build
+#       shell: bash
+#       working-directory: ${{github.workspace}}/build
+#       run: cmake --build . --parallel 2 --config $BUILD_TYPE
 
-    - name: Test
-      shell: bash
-      working-directory: ${{github.workspace}}/build
-      run: ctest -C $BUILD_TYPE --rerun-failed --output-on-failure
+#     - name: Test
+#       shell: bash
+#       working-directory: ${{github.workspace}}/build
+#       run: ctest -C $BUILD_TYPE --rerun-failed --output-on-failure
