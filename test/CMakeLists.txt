@@ -90,4 +90,3 @@ endfunction()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/array")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/queue")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/priority_queue")

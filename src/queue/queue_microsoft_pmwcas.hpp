@@ -58,8 +58,9 @@ class QueueWithMicrosoftPMwCAS
   using PMwCASField = ::pmwcas::MwcTargetField<size_t>;
   using Node_t = Node<T>;
   using ElementHolder_t = ElementHolder<::pmem::obj::persistent_ptr<Node_t> *>;
-  using GC_t = ::dbgroup::memory::EpochBasedGC<NodeTarget>;
-  using GarbageNode_t = ::dbgroup::memory::GarbageNodeOnPMEM<NodeTarget>;
+  using NodeTarget_t = NodeTarget<!kReusePageOnPMEM>;
+  using GC_t = ::dbgroup::memory::EpochBasedGC<NodeTarget_t>;
+  using GarbageNode_t = ::dbgroup::memory::GarbageNodeOnPMEM<NodeTarget_t>;
 
   /*####################################################################################
    * Public constructors/destructors
@@ -82,7 +83,7 @@ class QueueWithMicrosoftPMwCAS
 
     // prepare a garbage collector
     gc_ = std::make_unique<GC_t>(kGCInterval, kGCThreadNum);
-    gc_->SetHeadAddrOnPMEM<NodeTarget>(&(pool_.root()->gc_head));
+    gc_->SetHeadAddrOnPMEM<NodeTarget_t>(&(pool_.root()->gc_head));
     gc_->StartGC();
 
     // prepare a descriptor pool for PMwCAS
@@ -113,18 +114,12 @@ class QueueWithMicrosoftPMwCAS
   {
     // create a new node
     auto *tmp_node_addr = ReserveNodeAddress();
-    gc_->GetPageIfPossible<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
-    if (*tmp_node_addr == nullptr) {
-      try {
-        ::pmem::obj::flat_transaction::run(pool_, [&] {  //
-          *tmp_node_addr = ::pmem::obj::make_persistent<Node_t>(value, pool_uuid_);
-        });
-      } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
-      }
-    } else {
-      new (tmp_node_addr->get()) Node_t{value, pool_uuid_};
-      tmp_node_addr->persist();
+    try {
+      ::pmem::obj::flat_transaction::run(pool_, [&] {  //
+        *tmp_node_addr = ::pmem::obj::make_persistent<Node_t>(value, pool_uuid_);
+      });
+    } catch (const std::exception &e) {
+      std::cerr << e.what() << std::endl;
     }
 
     // insert the new node by using PMwCAS
@@ -179,8 +174,9 @@ class QueueWithMicrosoftPMwCAS
       desc->AddEntry(tmp_addr, kNullPtr, old_ptr);  // to prevent memory leak
 
       if (desc->MwCAS()) {
-        // the head node has been popped, so remove it and return its content
-        gc_->AddGarbage<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
+        // NOTE: this procedure cannot guarantee fault tolerance
+        ::pmem::obj::persistent_ptr<Node_t> dummy{PMEMoid{pool_uuid_, old_ptr}};
+        gc_->AddGarbage<NodeTarget_t>(dummy.raw_ptr(), pool_);
         ::pmem::obj::persistent_ptr<Node_t> new_head{PMEMoid{pool_uuid_, new_ptr}};
         return new_head->value;
       }

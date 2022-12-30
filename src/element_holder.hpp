@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef PMWCAS_BENCHMARK_ELEMENT_HOLDER_HPP
+#define PMWCAS_BENCHMARK_ELEMENT_HOLDER_HPP
+
 // C++ standard libraries
 #include <atomic>
 #include <memory>
@@ -86,3 +89,5 @@ class ElementHolder
   /// @brief The hold element.
   T element_{};
 };
+
+#endif  // PMWCAS_BENCHMARK_ELEMENT_HOLDER_HPP

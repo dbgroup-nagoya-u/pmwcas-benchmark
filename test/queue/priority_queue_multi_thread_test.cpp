@@ -25,7 +25,7 @@
 
 // local sources
 #include "common.hpp"
-#include "priority_queue/priority_queue_microsoft_pmwcas.hpp"
+#include "queue/priority_queue_microsoft_pmwcas.hpp"
 
 namespace dbgroup::test
 {
