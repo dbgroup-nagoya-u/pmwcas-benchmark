@@ -76,6 +76,7 @@ class Node
  * @brief A class for registering Node objects with GC.
  *
  */
+template <bool kReuse>
 struct NodeTarget {
   // do not call destructor
   using T = void;
@@ -84,7 +85,7 @@ struct NodeTarget {
   static constexpr bool kOnPMEM = true;
 
   // reuse garbage-collected pages
-  static constexpr bool kReusePages = false;
+  static constexpr bool kReusePages = kReuse;
 };
 
 #endif  // PMWCAS_BENCHMARK_QUEUE_NODE_PMWCAS_HPP

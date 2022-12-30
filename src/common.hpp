@@ -43,6 +43,9 @@ constexpr size_t kGCThreadNum = 1;
 /// @brief The NULL value for PMEMoid.off.
 constexpr size_t kNullPtr = 0;
 
+/// @brief A flag for reusing pages on persistent memory.
+constexpr bool kReusePageOnPMEM = true;
+
 /*######################################################################################
  * Global utilities
  *####################################################################################*/

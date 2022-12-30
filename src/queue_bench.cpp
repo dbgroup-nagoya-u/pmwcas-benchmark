@@ -30,8 +30,10 @@
 
 // local sources
 #ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+// #include "queue/priority_queue_pmwcas.hpp"
 // #include "queue/queue_pmwcas.hpp"
 #else
+#include "queue/priority_queue_microsoft_pmwcas.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
 #endif
 
@@ -44,10 +46,12 @@
 
 #ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
 /// an alias for our PMwCAS based implementations.
-// using PMwCAS = QueueWithPMwCAS<uint64_t>;
+// using QueuePMwCAS = QueueWithPMwCAS<uint64_t>;
+// using PriorityQueuePMwCAS = PriorityQueueWithPMwCAS<uint64_t>;
 #else
 /// an alias for microsoft/pmwcas based implementations.
-using PMwCAS = QueueWithMicrosoftPMwCAS<uint64_t>;
+using QueuePMwCAS = QueueWithMicrosoftPMwCAS<uint64_t>;
+using PriorityQueuePMwCAS = PriorityQueueWithMicrosoftPMwCAS<uint64_t>;
 #endif
 
 /*######################################################################################
@@ -60,6 +64,7 @@ DEFINE_string(seed, "", "A random seed to control reproducibility.");
 DEFINE_uint64(timeout, 10, "Seconds to timeout");
 DEFINE_bool(csv, false, "Output benchmark results as CSV format.");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency.");
+DEFINE_bool(use_priority_queue, false, "Use priority queues for benchmarks.");
 DEFINE_bool(lock, false, "Use an exclusive lock as a benchmark target.");
 DEFINE_bool(pmwcas, false, "Use a PMwCAS as a benchmark target.");
 
@@ -91,12 +96,14 @@ Run(  //
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
   {  // initialize a persitent queue with a thousand elements
+    std::mt19937_64 rand_engine{random_seed};
+    std::uniform_int_distribution<uint64_t> uni_dist{};
     Queue queue{pmem_dir_str};
     while (queue.Pop()) {
       // remove all the elements
     }
     for (size_t i = 0; i < 1E3; ++i) {
-      queue.Push(i);
+      queue.Push(uni_dist(rand_engine));
     }
   }
 
@@ -134,7 +141,11 @@ main(int argc, char *argv[])
   //   Run<Lock>("Global Lock", pmem_dir_str);
   // }
   if (FLAGS_pmwcas) {
-    Run<PMwCAS>("PMwCAS", pmem_dir_str);
+    if (FLAGS_use_priority_queue) {
+      Run<PriorityQueuePMwCAS>("PMwCAS-based priority queue", pmem_dir_str);
+    } else {
+      Run<QueuePMwCAS>("PMwCAS-based queue", pmem_dir_str);
+    }
   }
 
   return 0;
