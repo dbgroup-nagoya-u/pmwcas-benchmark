@@ -1,0 +1,1 @@
+DBGROUP_ADD_TEST("priority_queue_multi_thread_test")

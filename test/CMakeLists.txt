@@ -68,7 +68,7 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
     target_compile_definitions(${DBGROUP_TEST_TARGET} PRIVATE
       PMEM
       PMDK
-      DESC_CAP=${PMWCAS_BENCH_TARGET_NUM}
+      DESC_CAP=3
     )
     target_link_libraries(${DBGROUP_TEST_TARGET} PRIVATE
       pmwcas_static
@@ -90,3 +90,4 @@ endfunction()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/array")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/queue")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/priority_queue")

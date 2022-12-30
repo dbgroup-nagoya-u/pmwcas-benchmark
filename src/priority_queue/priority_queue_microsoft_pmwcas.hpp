@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef PMWCAS_BENCHMARK_QUEUE_QUEUE_MICROSOFT_PMWCAS_HPP
-#define PMWCAS_BENCHMARK_QUEUE_QUEUE_MICROSOFT_PMWCAS_HPP
+#ifndef PMWCAS_BENCHMARK_PRIORITY_QUEUE_PRIORITY_QUEUE_MICROSOFT_PMWCAS_HPP
+#define PMWCAS_BENCHMARK_PRIORITY_QUEUE_PRIORITY_QUEUE_MICROSOFT_PMWCAS_HPP
 
 // C++ standard libraries
 #include <exception>
@@ -48,7 +48,7 @@
  * `microsoft/pmwcas` for concurrency controls.
  */
 template <class T>
-class QueueWithMicrosoftPMwCAS
+class PriorityQueueWithMicrosoftPMwCAS
 {
  public:
   /*####################################################################################
@@ -66,11 +66,11 @@ class QueueWithMicrosoftPMwCAS
    *##################################################################################*/
 
   /**
-   * @brief Construct a new QueueWithMicrosoftPMwCAS object.
+   * @brief Construct a new PriorityQueueWithMicrosoftPMwCAS object.
    *
    * @param pmem_dir_str the path of persistent memory for benchmarking.
    */
-  QueueWithMicrosoftPMwCAS(const std::string &pmem_dir_str)
+  PriorityQueueWithMicrosoftPMwCAS(const std::string &pmem_dir_str)
   {
     // prepare a pool instance
     const auto &pool_path = GetPath(pmem_dir_str, kQueueLayout);
@@ -93,7 +93,7 @@ class QueueWithMicrosoftPMwCAS
    * Public destructors
    *##################################################################################*/
 
-  ~QueueWithMicrosoftPMwCAS()
+  ~PriorityQueueWithMicrosoftPMwCAS()
   {
     ::pmwcas::UninitLibrary();
     gc_ = nullptr;
@@ -111,6 +111,8 @@ class QueueWithMicrosoftPMwCAS
   void
   Push(const T &value)
   {
+    [[maybe_unused]] const auto &gc_guard = gc_->CreateEpochGuard();
+
     // create a new node
     auto *tmp_node_addr = ReserveNodeAddress();
     gc_->GetPageIfPossible<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
@@ -124,25 +126,36 @@ class QueueWithMicrosoftPMwCAS
       }
     } else {
       new (tmp_node_addr->get()) Node_t{value, pool_uuid_};
-      tmp_node_addr->persist();
     }
 
-    // insert the new node by using PMwCAS
+    // search the inserting position
     auto *tmp_addr = &(tmp_node_addr->raw_ptr()->off);
-    auto *tail_addr = &(root_->tail.off);
     const auto new_ptr = *tmp_addr;
+    auto *next_addr = &(root_->head.off);
     while (true) {
       [[maybe_unused]] const ::pmwcas::EpochGuard desc_guard{pmwcas_desc_pool_->GetEpoch()};
+
+      // check the next node has smaller value
+      auto next_ptr = ReadNodeProtected(next_addr);
+      ::pmem::obj::persistent_ptr<Node_t> next_node{PMEMoid{pool_uuid_, next_ptr}};
+      if (next_node != nullptr && next_node->value > value) {
+        // go to the next node
+        next_addr = &(next_node->next.off);
+        continue;
+      }
+
+      // set the next pointer in the new node
+      (*tmp_node_addr)->next.off = next_ptr;
+      tmp_node_addr->persist();
+
+      // insert the new node by using PMwCAS
       auto *desc = pmwcas_desc_pool_->AllocateDescriptor();
-
-      // prepare PMwCAS targets
-      const auto old_ptr = ReadNodeProtected(tail_addr);
-      ::pmem::obj::persistent_ptr<Node_t> tail_node{PMEMoid{pool_uuid_, old_ptr}};
-      desc->AddEntry(&(tail_node->next.off), kNullPtr, new_ptr);
-      desc->AddEntry(tail_addr, old_ptr, new_ptr);
+      desc->AddEntry(next_addr, next_ptr, new_ptr);
       desc->AddEntry(tmp_addr, new_ptr, kNullPtr);  // to prevent memory leak
-
       if (desc->MwCAS()) break;
+
+      // if failed, retry from getting the next node
+      next_ptr = ReadNodeProtected(next_addr);
     }
   }
 
@@ -170,19 +183,20 @@ class QueueWithMicrosoftPMwCAS
       // check this queue has any element
       const auto old_ptr = ReadNodeProtected(head_addr);
       ::pmem::obj::persistent_ptr<Node_t> old_head{PMEMoid{pool_uuid_, old_ptr}};
-      const auto new_ptr = ReadNodeProtected(&(old_head->next.off));
-      if (new_ptr == kNullPtr) return std::nullopt;
+      if (old_head == nullptr) return std::nullopt;
 
       // prepare PMwCAS targets
+      auto *next_addr = &(old_head->next.off);
+      const auto new_ptr = ReadNodeProtected(next_addr);
       auto *desc = pmwcas_desc_pool_->AllocateDescriptor();
-      desc->AddEntry(&(root_->head.off), old_ptr, new_ptr);
+      desc->AddEntry(head_addr, old_ptr, new_ptr);
+      desc->AddEntry(next_addr, new_ptr, new_ptr);
       desc->AddEntry(tmp_addr, kNullPtr, old_ptr);  // to prevent memory leak
 
       if (desc->MwCAS()) {
         // the head node has been popped, so remove it and return its content
         gc_->AddGarbage<NodeTarget>(tmp_node_addr->raw_ptr(), pool_);
-        ::pmem::obj::persistent_ptr<Node_t> new_head{PMEMoid{pool_uuid_, new_ptr}};
-        return new_head->value;
+        return old_head->value;
       }
     }
   }
@@ -193,10 +207,10 @@ class QueueWithMicrosoftPMwCAS
    *##################################################################################*/
 
   /// @brief The layout name for this class.
-  static constexpr char kQueueLayout[] = "queue_microsoft_pmwcas";
+  static constexpr char kQueueLayout[] = "priority_queue_microsoft_pmwcas";
 
   /// @brief The layout name for this class.
-  static constexpr char kPMwCASLayout[] = "microsoft_pmwcas_for_queue";
+  static constexpr char kPMwCASLayout[] = "microsoft_pmwcas_for_priority_queue";
 
   /*####################################################################################
    * Internal classes
@@ -209,9 +223,6 @@ class QueueWithMicrosoftPMwCAS
   struct Root {
     /// @brief The head of the queue.
     PMEMoid head{OID_NULL};
-
-    /// @brief The tail of the queue.
-    PMEMoid tail{OID_NULL};
 
     /// @brief The head of a linked list for GC.
     ::pmem::obj::persistent_ptr<GarbageNode_t> gc_head{nullptr};
@@ -233,16 +244,15 @@ class QueueWithMicrosoftPMwCAS
   CreateQueuePool(const std::string &pool_path)
   {
     try {
-      constexpr size_t kSize = PMEMOBJ_MIN_POOL * 256;  // 2GB
+      constexpr size_t kSize = PMEMOBJ_MIN_POOL * 1024;  // 8GB
       pool_ = ::pmem::obj::pool<Root>::create(pool_path, kQueueLayout, kSize, CREATE_MODE_RW);
       root_ = pool_.root();
       pool_uuid_ = root_.raw().pool_uuid_lo;
 
       // create a dummy node
       ::pmem::obj::flat_transaction::run(pool_, [&] {  //
-        pmemobj_tx_add_range(root_.raw(), 0, 2 * sizeof(PMEMoid));
-        root_->head = ::pmem::obj::make_persistent<Node_t>(0, pool_uuid_).raw();
-        root_->tail = root_->head;
+        pmemobj_tx_add_range(root_.raw(), 0, sizeof(PMEMoid));
+        root_->head.pool_uuid_lo = pool_uuid_;
       });
     } catch (const std::exception &e) {
       std::cerr << e.what() << std::endl;
@@ -361,4 +371,4 @@ class QueueWithMicrosoftPMwCAS
   std::shared_ptr<std::atomic_bool[]> reserve_arr_{new std::atomic_bool[kMaxThreadNum]};
 };
 
-#endif  // PMWCAS_BENCHMARK_QUEUE_QUEUE_MICROSOFT_PMWCAS_HPP
+#endif  // PMWCAS_BENCHMARK_PRIORITY_QUEUE_PRIORITY_QUEUE_MICROSOFT_PMWCAS_HPP

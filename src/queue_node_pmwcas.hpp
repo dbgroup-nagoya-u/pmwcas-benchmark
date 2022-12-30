@@ -84,7 +84,7 @@ struct NodeTarget {
   static constexpr bool kOnPMEM = true;
 
   // reuse garbage-collected pages
-  static constexpr bool kReusePages = false;
+  static constexpr bool kReusePages = true;
 };
 
 #endif  // PMWCAS_BENCHMARK_QUEUE_NODE_PMWCAS_HPP
