@@ -1,4 +1,4 @@
-# MwCAS Benchmark
+# PMwCAS Benchmark
 
 [![Ubuntu-22.04](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/unit_tests.yaml/badge.svg?branch=main)](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/unit_tests.yaml)
 
