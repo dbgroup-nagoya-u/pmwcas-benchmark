@@ -17,8 +17,8 @@
 #define PMWCAS_BENCHMARK_QUEUE_PMEM_QUEUE_HPP
 
 // C++ standard libraries
-#include <iostream>
 #include <exception>
+#include <iostream>
 #include <optional>
 #include <sstream>
 #include <utility>
@@ -55,13 +55,13 @@ class PmemQueue
    */
   PmemQueue(const std::string &pmem_dir_str)
   {
-    const auto &pmem_queue_path = GetPath(pmem_dir_str, kQueueBenchLayout);
+    const auto &pmem_queue_path = GetPath(pmem_dir_str, kQueueLayout);
     try {
       if (std::filesystem::exists(pmem_queue_path)) {
-        pool = Pool_t::open(pmem_queue_path, kQueueBenchLayout);
+        pool = Pool_t::open(pmem_queue_path, kQueueLayout);
       } else {
         constexpr size_t kSize = ((sizeof(int64_t) / PMEMOBJ_MIN_POOL) + 2) * PMEMOBJ_MIN_POOL;
-        pool = Pool_t::create(pmem_queue_path, kQueueBenchLayout, kSize, CREATE_MODE_RW);
+        pool = Pool_t::create(pmem_queue_path, kQueueLayout, kSize, CREATE_MODE_RW);
       }
     } catch (const std::exception &e) {
       std::cerr << e.what() << '\n';
@@ -108,7 +108,6 @@ class PmemQueue
   {
     std::optional<int64_t> ret = std::nullopt;
     ::pmem::obj::transaction::run(pool, [this, &ret] {
-      
       ret = head->value;
       auto n = head->next;
 
@@ -122,12 +121,19 @@ class PmemQueue
 
     return ret;
   }
-  
+
  private:
+  /*####################################################################################
+   * Internal constants
+   *##################################################################################*/
+
+  /// @brief The layout name for this class.
+  static constexpr char kQueueLayout[] = "queue_lock";
+
   /*####################################################################################
    * Private classes
    *##################################################################################*/
-  
+
   /**
    * @brief Internal node definition.
    */

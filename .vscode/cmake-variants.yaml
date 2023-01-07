@@ -11,6 +11,8 @@ buildType:
         PMWCAS_BENCH_TARGET_NUM: 2
         PMWCAS_BENCH_USE_MICROSOFT_PMWCAS: OFF
         PMWCAS_BENCH_BUILD_TESTS: ON
+        DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
+        DBGROUP_TEST_THREAD_NUM: 8
     relWithDebInfo:
       short: RelWithDebInfo
       long: Perform optimizations and include debugging informatin
@@ -20,6 +22,8 @@ buildType:
         PMWCAS_BENCH_TARGET_NUM: 2
         PMWCAS_BENCH_USE_MICROSOFT_PMWCAS: OFF
         PMWCAS_BENCH_BUILD_TESTS: ON
+        DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
+        DBGROUP_TEST_THREAD_NUM: 8
     release:
       short: Release
       long: Perform optimizations and omit debugging informatin
@@ -29,3 +33,5 @@ buildType:
         PMWCAS_BENCH_TARGET_NUM: 2
         PMWCAS_BENCH_USE_MICROSOFT_PMWCAS: OFF
         PMWCAS_BENCH_BUILD_TESTS: ON
+        DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
+        DBGROUP_TEST_THREAD_NUM: 8

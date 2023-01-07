@@ -17,11 +17,6 @@
 #ifndef PMWCAS_BENCHMARK_ARRAY_PMWCAS_TARGET_HPP
 #define PMWCAS_BENCHMARK_ARRAY_PMWCAS_TARGET_HPP
 
-// system headers
-#include <libpmemobj++/mutex.hpp>
-#include <libpmemobj++/pool.hpp>
-#include <libpmemobj++/transaction.hpp>
-
 // C++ standard libraries
 #include <filesystem>
 #include <iostream>
@@ -29,10 +24,9 @@
 #include <string>
 #include <vector>
 
-// external sources
-#ifdef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
-#include "pmwcas.h"
-#endif
+// external system libraries
+#include <libpmemobj++/pool.hpp>
+#include <libpmemobj++/transaction.hpp>
 
 // local sources
 #include "array/pmem_array.hpp"
@@ -79,7 +73,7 @@ class PMwCASTarget
       const uint32_t pool_capacity = partition_num * 1024;
 
       ::pmwcas::InitLibrary(
-          pmwcas::PMDKAllocator::Create(pmwcas_path.c_str(), kPMwCASLayout.c_str(), kPoolSize),
+          pmwcas::PMDKAllocator::Create(pmwcas_path.c_str(), kPMwCASLayout, kPoolSize),
           pmwcas::PMDKAllocator::Destroy,    //
           pmwcas::LinuxEnvironment::Create,  //
           pmwcas::LinuxEnvironment::Destroy);
@@ -119,6 +113,18 @@ class PMwCASTarget
   void Execute(const Operation &ops);
 
  private:
+  /*####################################################################################
+   * Internal constants
+   *##################################################################################*/
+
+#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
+  /// the layout name for the pool of PMwCAS descriptors.
+  static constexpr char kPMwCASLayout[] = "pmwcas";
+#else
+  /// the layout name for the pool of PMwCAS descriptors.
+  static constexpr char kPMwCASLayout[] = "microsoft_pmwcas";
+#endif
+
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
