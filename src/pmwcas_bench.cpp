@@ -45,7 +45,7 @@ DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency.
 DEFINE_bool(init, false, "Initialize all the array elemnts with zeros and exit.");
 DEFINE_bool(show, false, "Show random-sampled elemnts in the array and exit.");
 DEFINE_bool(lock, false, "Use an exclusive lock as a benchmark target.");
-DEFINE_bool(pmwcas, false, "Use a PMwCAS as a benchmark target.");
+DEFINE_bool(microsoft_pmwcas, false, "Use a microsoft/pmwcas as a benchmark target.");
 
 DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_validator(num_thread, &ValidateNonZero);
@@ -118,8 +118,8 @@ main(int argc, char *argv[])
   if (FLAGS_lock) {
     Run<Lock>("Global Lock", pmem_dir_str);
   }
-  if (FLAGS_pmwcas) {
-    Run<PMwCAS>("PMwCAS", pmem_dir_str);
+  if (FLAGS_microsoft_pmwcas) {
+    Run<MicrosoftPMwCAS>("microsoft/pmwcas", pmem_dir_str);
   }
 
   return 0;

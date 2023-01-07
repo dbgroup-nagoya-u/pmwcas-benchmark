@@ -8,8 +8,7 @@ buildType:
       buildType: Debug
       settings:
         PMWCAS_BENCH_ELEMENT_NUM: 100000
-        PMWCAS_BENCH_TARGET_NUM: 2
-        PMWCAS_BENCH_USE_MICROSOFT_PMWCAS: OFF
+        PMWCAS_BENCH_TARGET_NUM: 3
         PMWCAS_BENCH_BUILD_TESTS: ON
         DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
         DBGROUP_TEST_THREAD_NUM: 8
@@ -19,8 +18,7 @@ buildType:
       buildType: RelWithDebInfo
       settings:
         PMWCAS_BENCH_ELEMENT_NUM: 1000000
-        PMWCAS_BENCH_TARGET_NUM: 2
-        PMWCAS_BENCH_USE_MICROSOFT_PMWCAS: OFF
+        PMWCAS_BENCH_TARGET_NUM: 3
         PMWCAS_BENCH_BUILD_TESTS: ON
         DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
         DBGROUP_TEST_THREAD_NUM: 8
@@ -30,8 +28,7 @@ buildType:
       buildType: Release
       settings:
         PMWCAS_BENCH_ELEMENT_NUM: 1000000
-        PMWCAS_BENCH_TARGET_NUM: 2
-        PMWCAS_BENCH_USE_MICROSOFT_PMWCAS: OFF
+        PMWCAS_BENCH_TARGET_NUM: 3
         PMWCAS_BENCH_BUILD_TESTS: ON
         DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
         DBGROUP_TEST_THREAD_NUM: 8

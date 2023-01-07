@@ -29,13 +29,10 @@
 #include "queue/operation_engine.hpp"
 
 // local sources
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
 // #include "queue/priority_queue_pmwcas.hpp"
 // #include "queue/queue_pmwcas.hpp"
-#else
 #include "queue/priority_queue_microsoft_pmwcas.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
-#endif
 
 /*######################################################################################
  * Type aliases for competitors
@@ -44,15 +41,13 @@
 /// an alias for lock based implementations.
 // using Lock = QueueWithLock<uint64_t>;
 
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
 /// an alias for our PMwCAS based implementations.
 // using QueuePMwCAS = QueueWithPMwCAS<uint64_t>;
 // using PriorityQueuePMwCAS = PriorityQueueWithPMwCAS<uint64_t>;
-#else
+
 /// an alias for microsoft/pmwcas based implementations.
-using QueuePMwCAS = QueueWithMicrosoftPMwCAS<uint64_t>;
-using PriorityQueuePMwCAS = PriorityQueueWithMicrosoftPMwCAS<uint64_t>;
-#endif
+using QueueMicrosoftPMwCAS = QueueWithMicrosoftPMwCAS<uint64_t>;
+using PriorityQueueMicrosoftPMwCAS = PriorityQueueWithMicrosoftPMwCAS<uint64_t>;
 
 /*######################################################################################
  * Command-line options
@@ -66,7 +61,7 @@ DEFINE_bool(csv, false, "Output benchmark results as CSV format.");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency.");
 DEFINE_bool(use_priority_queue, false, "Use priority queues for benchmarks.");
 DEFINE_bool(lock, false, "Use an exclusive lock as a benchmark target.");
-DEFINE_bool(pmwcas, false, "Use a PMwCAS as a benchmark target.");
+DEFINE_bool(microsoft_pmwcas, false, "Use a microsoft/pmwcas as a benchmark target.");
 
 DEFINE_validator(num_exec, &ValidateNonZero);
 DEFINE_validator(num_thread, &ValidateNonZero);
@@ -140,11 +135,11 @@ main(int argc, char *argv[])
   // if (FLAGS_lock) {
   //   Run<Lock>("Global Lock", pmem_dir_str);
   // }
-  if (FLAGS_pmwcas) {
+  if (FLAGS_microsoft_pmwcas) {
     if (FLAGS_use_priority_queue) {
-      Run<PriorityQueuePMwCAS>("PMwCAS-based priority queue", pmem_dir_str);
+      Run<PriorityQueueMicrosoftPMwCAS>("microsoft/pmwcas: priority queue", pmem_dir_str);
     } else {
-      Run<QueuePMwCAS>("PMwCAS-based queue", pmem_dir_str);
+      Run<QueueMicrosoftPMwCAS>("microsoft/pmwcas: queue", pmem_dir_str);
     }
   }
 

@@ -21,9 +21,8 @@ set(MICROSOFT_PMWCAS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/microsoft-
 #--------------------------------------------------------------------------------------#
 
 set(PMWCAS_BENCH_ELEMENT_NUM "1000000" CACHE STRING "The number of elements in a target array.")
-set(PMWCAS_BENCH_TARGET_NUM "2" CACHE STRING "The maximum number of target words of PMwCAS.")
+set(PMWCAS_BENCH_TARGET_NUM "3" CACHE STRING "The maximum number of target words of PMwCAS.")
 set(PMWCAS_BENCH_MAX_THREAD_NUM "256" CACHE STRING "The maximum number of threads for benchmarking.")
-option(PMWCAS_BENCH_USE_MICROSOFT_PMWCAS "Use microsoft/pmwcas as a PMwCAS implementation." OFF)
 
 #--------------------------------------------------------------------------------------#
 # Configure PMDK
@@ -50,7 +49,7 @@ set(MEMORY_MANAGER_USE_PERSISTENT_MEMORY "ON" CACHE STRING "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/memory-manager")
 
 #--------------------------------------------------------------------------------------#
-# Configure Microsoft's PMwCAS if needed
+# Configure Microsoft's PMwCAS
 #--------------------------------------------------------------------------------------#
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_microsoft_pmwcas.txt")
@@ -60,7 +59,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_microsoft_pmwcas.txt")
 #--------------------------------------------------------------------------------------#
 
 # define function to add executable files
-function(PMWCAS_BENCH_ADD_EXECUTABLE PMWCAS_BENCH_TARGET PMWCAS_BENCH_MWCAS_CAPACITY)
+function(PMWCAS_BENCH_ADD_EXECUTABLE PMWCAS_BENCH_TARGET)
   target_compile_features(${PMWCAS_BENCH_TARGET} PRIVATE
     "cxx_std_17"
   )
@@ -73,8 +72,8 @@ function(PMWCAS_BENCH_ADD_EXECUTABLE PMWCAS_BENCH_TARGET PMWCAS_BENCH_MWCAS_CAPA
   )
   target_compile_definitions(${PMWCAS_BENCH_TARGET} PRIVATE
     PMWCAS_BENCH_MAX_THREAD_NUM=${PMWCAS_BENCH_MAX_THREAD_NUM}
-    DESC_CAP=${PMWCAS_BENCH_MWCAS_CAPACITY}
-    $<$<BOOL:${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS}>:PMWCAS_BENCH_USE_MICROSOFT_PMWCAS>
+    PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
+    PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
   )
   target_include_directories(${PMWCAS_BENCH_TARGET} PRIVATE
     "${PROJECT_SOURCE_DIR}/src"
@@ -97,20 +96,18 @@ endfunction()
 add_executable(pmwcas_bench
   "${CMAKE_CURRENT_SOURCE_DIR}/src/pmwcas_bench.cpp"
 )
-PMWCAS_BENCH_ADD_EXECUTABLE("pmwcas_bench" ${PMWCAS_BENCH_TARGET_NUM})
-target_compile_definitions(pmwcas_bench PRIVATE
-  PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
-  PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
-)
+PMWCAS_BENCH_ADD_EXECUTABLE("pmwcas_bench")
 
 #--------------------------------------------------------------------------------------#
 # Build a queue-based benchmark
 #--------------------------------------------------------------------------------------#
 
-add_executable(queue_bench
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/queue_bench.cpp"
-)
-PMWCAS_BENCH_ADD_EXECUTABLE("queue_bench" 3)
+if(${PMWCAS_BENCH_TARGET_NUM} EQUAL 3)
+  add_executable(queue_bench
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/queue_bench.cpp"
+  )
+  PMWCAS_BENCH_ADD_EXECUTABLE("queue_bench")
+endif()
 
 #--------------------------------------------------------------------------------------#
 # Build unit tests

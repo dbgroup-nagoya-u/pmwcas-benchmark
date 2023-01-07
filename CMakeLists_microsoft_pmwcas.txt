@@ -3,9 +3,6 @@ find_package(Threads)
 find_package(PkgConfig)
 pkg_check_modules(LIBPMEMOBJ REQUIRED libpmemobj)
 
-# descriptor capacity
-set(DESC_CAP "4" CACHE STRING "Descriptor capacity")
-
 # set source files
 set(MICROSOFT_PMWCAS_SOURCES
   ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/common/allocator_internal.cc
@@ -33,7 +30,7 @@ target_include_directories(microsoft_pmwcas PRIVATE
   "${LIBPMEMOBJ_INCLUDE_DIRS}"
 )
 target_compile_definitions(microsoft_pmwcas PUBLIC
-  DESC_CAP=${DESC_CAP}
+  DESC_CAP=${PMWCAS_BENCH_TARGET_NUM}
   PMEM
   PMDK
 )
