@@ -68,3 +68,4 @@ function(ADD_PMWCAS_BENCH_TEST PMWCAS_BENCH_TEST_TARGET)
 endfunction()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/array")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/queue")

@@ -17,6 +17,7 @@
 #define PMWCAS_BENCHMARK_QUEUE_PMEM_QUEUE_HPP
 
 // C++ standard libraries
+#include <iostream>
 #include <exception>
 #include <optional>
 #include <sstream>
@@ -37,6 +38,43 @@
 class PmemQueue
 {
  public:
+  /*####################################################################################
+   * Type aliases
+   *##################################################################################*/
+
+  using Pool_t = ::pmem::obj::pool<int64_t>;
+
+  /*####################################################################################
+   * Public constructors/destructors
+   *##################################################################################*/
+
+  /**
+   * @brief Construct a new PmemQueue object.
+   *
+   * @param path the path of persistent memory for benchmarking.
+   */
+  PmemQueue(const std::string &pmem_dir_str)
+  {
+    const auto &pmem_queue_path = GetPath(pmem_dir_str, kQueueBenchLayout);
+    try {
+      if (std::filesystem::exists(pmem_queue_path)) {
+        pool = Pool_t::open(pmem_queue_path, kQueueBenchLayout);
+      } else {
+        constexpr size_t kSize = ((sizeof(int64_t) / PMEMOBJ_MIN_POOL) + 2) * PMEMOBJ_MIN_POOL;
+        pool = Pool_t::create(pmem_queue_path, kQueueBenchLayout, kSize, CREATE_MODE_RW);
+      }
+    } catch (const std::exception &e) {
+      std::cerr << e.what() << '\n';
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  /*####################################################################################
+   * Public destructors
+   *##################################################################################*/
+
+  ~PmemQueue() { pool.close(); }
+
   /*####################################################################################
    * Public utilities
    *##################################################################################*/
@@ -113,7 +151,7 @@ class PmemQueue
    * Internal member variables
    *##################################################################################*/
 
-  ::pmem::obj::pool<int64_t> pool;
+  Pool_t pool;
 
   // The head of the queue
   ::pmem::obj::persistent_ptr<Node> head;
