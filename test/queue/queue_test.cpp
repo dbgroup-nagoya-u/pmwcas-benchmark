@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-// a corresponding header of this file
-#include "queue/pmem_queue.hpp"
-
+// C++ standard libraries
 #include <iostream>
 
 // external sources
 #include "gtest/gtest.h"
+
+// local sources
+#include "queue/queue_lock.hpp"
 
 class PmemQueueFixture : public ::testing::Test
 {
