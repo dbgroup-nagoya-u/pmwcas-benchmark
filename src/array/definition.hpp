@@ -20,12 +20,9 @@
 // external libraries
 #include <libpmemobj++/mutex.hpp>
 
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
 // #include "pmwcas/pmwcas_descriptor_pool.hpp"
-#else
 #include "mwcas/mwcas.h"
 #include "pmwcas.h"
-#endif
 
 // local sources
 #include "common.hpp"
@@ -47,12 +44,10 @@ constexpr size_t kTargetNum = PMWCAS_BENCH_TARGET_NUM;
 /// an alias for lock based implementations.
 using Lock = ::pmem::obj::mutex;
 
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
 /// an alias for our PMwCAS based implementations.
 // using PMwCAS = ::dbgroup::atomic::pmwcas::PMwCASDescriptorPool;
-#else
+
 /// an alias for microsoft/pmwcas based implementations.
-using PMwCAS = ::pmwcas::DescriptorPool;
-#endif
+using MicrosoftPMwCAS = ::pmwcas::DescriptorPool;
 
 #endif  // PMWCAS_BENCHMARK_ARRAY_COMMON_HPP

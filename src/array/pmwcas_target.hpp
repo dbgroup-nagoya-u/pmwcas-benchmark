@@ -62,24 +62,20 @@ class PMwCASTarget
       : target_arr_{pmem_dir_str}, pool_{target_arr_.GetPool()}, root_{pool_.root()}
   {
     // prepare descriptor pool for PMwCAS if needed
-    if constexpr (std::is_same_v<Implementation, PMwCAS>) {
-      const auto &pmwcas_path = GetPath(pmem_dir_str, kPMwCASLayout);
+    if constexpr (std::is_same_v<Implementation, MicrosoftPMwCAS>) {
+      const auto &pmwcas_path = GetPath(pmem_dir_str, kMicrosoftPMwCASLayout);
 
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
-      // not implemented yet
-#else
       constexpr auto kPoolSize = PMEMOBJ_MIN_POOL * 1024;  // 8GB
       const uint32_t partition_num = worker_num;
       const uint32_t pool_capacity = partition_num * 1024;
 
       ::pmwcas::InitLibrary(
-          pmwcas::PMDKAllocator::Create(pmwcas_path.c_str(), kPMwCASLayout, kPoolSize),
+          pmwcas::PMDKAllocator::Create(pmwcas_path.c_str(), kMicrosoftPMwCASLayout, kPoolSize),
           pmwcas::PMDKAllocator::Destroy,    //
           pmwcas::LinuxEnvironment::Create,  //
           pmwcas::LinuxEnvironment::Destroy);
 
-      pmwcas_desc_pool_ = std::make_unique<PMwCAS>(pool_capacity, partition_num);
-#endif
+      pmwcas_desc_pool_ = std::make_unique<MicrosoftPMwCAS>(pool_capacity, partition_num);
     }
   }
 
@@ -117,13 +113,11 @@ class PMwCASTarget
    * Internal constants
    *##################################################################################*/
 
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
   /// the layout name for the pool of PMwCAS descriptors.
   static constexpr char kPMwCASLayout[] = "pmwcas";
-#else
+
   /// the layout name for the pool of PMwCAS descriptors.
-  static constexpr char kPMwCASLayout[] = "microsoft_pmwcas";
-#endif
+  static constexpr char kMicrosoftPMwCASLayout[] = "microsoft_pmwcas";
 
   /*####################################################################################
    * Internal member variables
@@ -137,10 +131,8 @@ class PMwCASTarget
   /// a pointer to the root object in a pool.
   ::pmem::obj::persistent_ptr<Root> root_{};
 
-#ifdef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
   /// the pool of PMwCAS descriptors.
-  std::unique_ptr<PMwCAS> pmwcas_desc_pool_{nullptr};
-#endif
+  std::unique_ptr<MicrosoftPMwCAS> pmwcas_desc_pool_{nullptr};
 };
 
 /*######################################################################################
@@ -181,11 +173,8 @@ PMwCASTarget<Lock>::Execute(const Operation &ops)
  */
 template <>
 inline void
-PMwCASTarget<PMwCAS>::Execute(const Operation &ops)
+PMwCASTarget<MicrosoftPMwCAS>::Execute(const Operation &ops)
 {
-#ifndef PMWCAS_BENCH_USE_MICROSOFT_PMWCAS
-// not implemented yet
-#else
   using PMwCASField = ::pmwcas::MwcTargetField<uint64_t>;
 
   while (true) {
@@ -203,7 +192,6 @@ PMwCASTarget<PMwCAS>::Execute(const Operation &ops)
 
     if (success) break;
   }
-#endif
 }
 
 #endif  // PMWCAS_BENCHMARK_ARRAY_PMWCAS_TARGET_HPP

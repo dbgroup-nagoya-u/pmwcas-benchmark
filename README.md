@@ -20,9 +20,8 @@ cd pmwcas-benchmark
 #### Parameters for Benchmarking
 
 - `PMWCAS_BENCH_ELEMENT_NUM`: The number of elements in a target array (default: `1E6`).
-- `PMWCAS_BENCH_TARGET_NUM`: The maximum number of target words of PMwCAS (default: `2`).
+- `PMWCAS_BENCH_TARGET_NUM`: The maximum number of target words of PMwCAS (default: `3`).
 - `PMWCAS_BENCH_MAX_THREAD_NUM`: The maximum number of threads for benchmarking (default: `256`).
-- `PMWCAS_BENCH_USE_MICROSOFT_PMWCAS`: Use microsoft/pmwcas as a PMwCAS implementation (default: `OFF`).
 
 #### Parameters for Unit Testing
 

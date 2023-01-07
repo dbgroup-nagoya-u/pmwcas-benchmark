@@ -18,6 +18,7 @@
 #define PMWCAS_BENCHMARK_QUEUE_BENCH_TARGET_HPP
 
 // C++ standard libraries
+#include <optional>
 #include <string>
 
 /**

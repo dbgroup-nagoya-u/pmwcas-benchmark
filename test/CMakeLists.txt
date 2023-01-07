@@ -51,7 +51,6 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
     PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
     PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
     PMWCAS_BENCH_MAX_THREAD_NUM=${PMWCAS_BENCH_MAX_THREAD_NUM}
-    $<$<BOOL:${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS}>:PMWCAS_BENCH_USE_MICROSOFT_PMWCAS>
   )
   target_include_directories(${DBGROUP_TEST_TARGET} PRIVATE
     "${PROJECT_SOURCE_DIR}/src"
@@ -61,29 +60,9 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
     ${LIBPMEMOBJ++_LIBRARIES}
     cpp_utility
     dbgroup::memory_manager
+    microsoft_pmwcas
     gtest_main
   )
-
-  if(${PMWCAS_BENCH_USE_MICROSOFT_PMWCAS})
-    target_compile_definitions(${DBGROUP_TEST_TARGET} PRIVATE
-      PMEM
-      PMDK
-      DESC_CAP=3
-    )
-    target_link_libraries(${DBGROUP_TEST_TARGET} PRIVATE
-      pmwcas_static
-      rt
-    )
-    target_include_directories(${DBGROUP_TEST_TARGET} PRIVATE
-      "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
-      "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
-      "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
-    )
-  else()
-    target_link_libraries(${DBGROUP_TEST_TARGET} PRIVATE
-      #pmwcas
-    )
-  endif()
 
   add_test(NAME ${DBGROUP_TEST_TARGET} COMMAND $<TARGET_FILE:${DBGROUP_TEST_TARGET}>)
 endfunction()

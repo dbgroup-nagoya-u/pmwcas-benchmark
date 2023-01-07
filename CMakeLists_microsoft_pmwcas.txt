@@ -1,0 +1,42 @@
+# configure libraries
+find_package(Threads)
+find_package(PkgConfig)
+pkg_check_modules(LIBPMEMOBJ REQUIRED libpmemobj)
+
+# set source files
+set(MICROSOFT_PMWCAS_SOURCES
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/common/allocator_internal.cc
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/common/pmwcas_internal.cc
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/common/environment_internal.cc
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/common/epoch.cc
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/environment/environment.cc
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/environment/environment_linux.cc
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/mwcas/mwcas.cc
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/util/nvram.cc
+  ${MICROSOFT_PMWCAS_SOURCE_DIR}/src/util/status.cc
+)
+
+# build library
+add_library(microsoft_pmwcas STATIC ${MICROSOFT_PMWCAS_SOURCES})
+target_compile_features(microsoft_pmwcas PUBLIC
+  "cxx_std_11"
+)
+target_include_directories(microsoft_pmwcas PUBLIC
+  "${MICROSOFT_PMWCAS_SOURCE_DIR}/"
+  "${MICROSOFT_PMWCAS_SOURCE_DIR}/src"
+  "${MICROSOFT_PMWCAS_SOURCE_DIR}/include"
+)
+target_include_directories(microsoft_pmwcas PRIVATE
+  "${LIBPMEMOBJ_INCLUDE_DIRS}"
+)
+target_compile_definitions(microsoft_pmwcas PUBLIC
+  DESC_CAP=${PMWCAS_BENCH_TARGET_NUM}
+  PMEM
+  PMDK
+)
+target_link_libraries(microsoft_pmwcas PRIVATE
+  Threads::Threads
+  rt
+  numa
+  ${LIBPMEMOBJ_LIBRARIES}
+)
