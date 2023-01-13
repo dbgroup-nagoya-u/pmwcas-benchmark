@@ -35,6 +35,7 @@
  * @brief Persistent memory list-based queue.
  *
  */
+template <class T>
 class PmemQueue
 {
  public:
