@@ -52,7 +52,7 @@ class QueueFixture : public ::testing::Test
     // create a user directory for testing
     const std::string user_name{std::getenv("USER")};
     pool_path_ /= user_name;
-    pool_path_ /= "pmwcas_bench_queue_test";
+    pool_path_ /= "pmwcas_bench_queue_multi_thread_test";
     std::filesystem::remove_all(pool_path_);
     std::filesystem::create_directories(pool_path_);
 
