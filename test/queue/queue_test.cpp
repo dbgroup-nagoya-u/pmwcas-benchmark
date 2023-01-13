@@ -78,7 +78,7 @@ class PmemQueueFixture : public ::testing::Test
   PopEmptyQueue()
   {
     PmemQueue<uint64_t> pq{""};
-    auto value = pq.pop();
+    const auto &value = pq.pop();
     EXPECT_FALSE(value);
   }
 
@@ -97,8 +97,8 @@ class PmemQueueFixture : public ::testing::Test
     }
 
     for (size_t i = 0; i < kLoopNum; ++i) {
-      auto value = pq.pop();
-      EXPECT_TRUE(*value);
+      const auto &value = pq.pop();
+      ASSERT_TRUE(value);
       EXPECT_EQ(*value, temp[i]);
     }
   }
