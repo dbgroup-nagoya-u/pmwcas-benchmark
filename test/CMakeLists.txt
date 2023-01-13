@@ -60,6 +60,7 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
     ${LIBPMEMOBJ++_LIBRARIES}
     cpp_utility
     dbgroup::memory_manager
+    pmwcas::pmwcas
     microsoft_pmwcas
     gtest_main
   )

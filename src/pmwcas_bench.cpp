@@ -44,6 +44,7 @@ DEFINE_bool(csv, false, "Output benchmark results as CSV format.");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency.");
 DEFINE_bool(init, false, "Initialize all the array elemnts with zeros and exit.");
 DEFINE_bool(show, false, "Show random-sampled elemnts in the array and exit.");
+DEFINE_bool(pmwcas, false, "Use our PMwCAS as a benchmark target.");
 DEFINE_bool(lock, false, "Use an exclusive lock as a benchmark target.");
 DEFINE_bool(microsoft_pmwcas, false, "Use a microsoft/pmwcas as a benchmark target.");
 
@@ -115,6 +116,9 @@ main(int argc, char *argv[])
 
   // run benchmark for each implementaton
 
+  if (FLAGS_pmwcas) {
+    Run<PMwCAS>("PMwCAS", pmem_dir_str);
+  }
   if (FLAGS_lock) {
     Run<Lock>("Global Lock", pmem_dir_str);
   }

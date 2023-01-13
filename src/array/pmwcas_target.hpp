@@ -62,7 +62,10 @@ class PMwCASTarget
       : target_arr_{pmem_dir_str}, pool_{target_arr_.GetPool()}, root_{pool_.root()}
   {
     // prepare descriptor pool for PMwCAS if needed
-    if constexpr (std::is_same_v<Implementation, MicrosoftPMwCAS>) {
+    if constexpr (std::is_same_v<Implementation, PMwCAS>) {
+      const auto &pmwcas_path = GetPath(pmem_dir_str, kPMwCASLayout);
+      pmwcas_desc_pool_ = std::make_unique<PMwCAS>(pmwcas_path, kPMwCASLayout);
+    } else if constexpr (std::is_same_v<Implementation, MicrosoftPMwCAS>) {
       const auto &pmwcas_path = GetPath(pmem_dir_str, kMicrosoftPMwCASLayout);
 
       constexpr auto kPoolSize = PMEMOBJ_MIN_POOL * 1024;  // 8GB
@@ -75,7 +78,7 @@ class PMwCASTarget
           pmwcas::LinuxEnvironment::Create,  //
           pmwcas::LinuxEnvironment::Destroy);
 
-      pmwcas_desc_pool_ = std::make_unique<MicrosoftPMwCAS>(pool_capacity, partition_num);
+      microsoft_pmwcas_desc_pool_ = std::make_unique<MicrosoftPMwCAS>(pool_capacity, partition_num);
     }
   }
 
@@ -132,7 +135,10 @@ class PMwCASTarget
   ::pmem::obj::persistent_ptr<Root> root_{};
 
   /// the pool of PMwCAS descriptors.
-  std::unique_ptr<MicrosoftPMwCAS> pmwcas_desc_pool_{nullptr};
+  std::unique_ptr<PMwCAS> pmwcas_desc_pool_{nullptr};
+
+  /// the pool of microsoft/pmwcas descriptors.
+  std::unique_ptr<MicrosoftPMwCAS> microsoft_pmwcas_desc_pool_{nullptr};
 };
 
 /*######################################################################################
@@ -173,13 +179,36 @@ PMwCASTarget<Lock>::Execute(const Operation &ops)
  */
 template <>
 inline void
+PMwCASTarget<PMwCAS>::Execute(const Operation &ops)
+{
+  using PMwCASDescriptor = ::dbgroup::atomic::pmwcas::PMwCASDescriptor;
+  while (true) {
+    auto *desc = pmwcas_desc_pool_->Get();
+    for (size_t i = 0; i < kTargetNum; ++i) {
+      auto *addr = &(root_->arr[ops.GetPosition(i)]);
+      const auto old_val = PMwCASDescriptor::Read<uint64_t>(addr, std::memory_order_relaxed);
+      const auto new_val = old_val + 1;
+      desc->AddPMwCASTarget(addr, old_val, new_val, std::memory_order_relaxed);
+    }
+    if (desc->PMwCAS()) break;
+  }
+}
+
+/**
+ * @brief Specialization for the PMwCAS-based implementation.
+ *
+ * @tparam MicrosoftPMwCAS
+ * @param ops a target PMwCAS operation.
+ */
+template <>
+inline void
 PMwCASTarget<MicrosoftPMwCAS>::Execute(const Operation &ops)
 {
   using PMwCASField = ::pmwcas::MwcTargetField<uint64_t>;
 
   while (true) {
-    auto *desc = pmwcas_desc_pool_->AllocateDescriptor();
-    auto *epoch = pmwcas_desc_pool_->GetEpoch();
+    auto *desc = microsoft_pmwcas_desc_pool_->AllocateDescriptor();
+    auto *epoch = microsoft_pmwcas_desc_pool_->GetEpoch();
     epoch->Protect();
     for (size_t i = 0; i < kTargetNum; ++i) {
       auto *addr = reinterpret_cast<uint64_t *>(&(root_->arr[ops.GetPosition(i)]));
