@@ -77,27 +77,23 @@ class PmemQueueFixture : public ::testing::Test
   void
   PopEmptyQueue()
   {
-    PmemQueue<uint64_t> pq{""};
-    const auto &value = pq.pop();
+    const auto &value = queue_->pop();
     EXPECT_FALSE(value);
   }
 
   void
   PushAndThenPop()
   {
-    PmemQueue<uint64_t> pq{""};
     std::vector<uint64_t> temp;
     std::mt19937_64 rand_engine{std::random_device{}()};
     std::uniform_int_distribution<uint64_t> uni_dist{};
-
     for (size_t i = 0; i < kLoopNum; ++i) {
       uint64_t value = uni_dist(rand_engine);
-      pq.push(value);
+      queue_->push(value);
       temp.push_back(value);
     }
-
     for (size_t i = 0; i < kLoopNum; ++i) {
-      const auto &value = pq.pop();
+      const auto &value = queue_->pop();
       ASSERT_TRUE(value);
       EXPECT_EQ(*value, temp[i]);
     }
@@ -117,7 +113,7 @@ class PmemQueueFixture : public ::testing::Test
  *####################################################################################*/
 
 using TestTargets = ::testing::Types<  //
-    PmemQueue<uint64_t>                //
+    QueueWithLock<uint64_t>            //
     >;
 TYPED_TEST_SUITE(PmemQueueFixture, TestTargets);
 

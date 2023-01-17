@@ -36,7 +36,7 @@
  *
  */
 template <class T>
-class PmemQueue
+class QueueWithLock
 {
  public:
   /*####################################################################################
@@ -54,7 +54,7 @@ class PmemQueue
    *
    * @param path the path of persistent memory for benchmarking.
    */
-  PmemQueue(const std::string &pmem_dir_str)
+  QueueWithLock(const std::string &pmem_dir_str)
   {
     const auto &pmem_queue_path = GetPath(pmem_dir_str, kQueueLayout);
     try {
@@ -74,7 +74,7 @@ class PmemQueue
    * Public destructors
    *##################################################################################*/
 
-  ~PmemQueue() { pool.close(); }
+  ~QueueWithLock() { pool.close(); }
 
   /*####################################################################################
    * Public utilities
@@ -109,14 +109,16 @@ class PmemQueue
   {
     std::optional<int64_t> ret = std::nullopt;
     ::pmem::obj::transaction::run(pool, [this, &ret] {
-      ret = head->value;
-      auto n = head->next;
+      if (head) {
+        ret = head->value;
+        auto n = head->next;
 
-      ::pmem::obj::delete_persistent<Node>(head);
-      head = std::move(n);
+        ::pmem::obj::delete_persistent<Node>(head);
+        head = std::move(n);
 
-      if (head == nullptr) {
-        tail = nullptr;
+        if (head == nullptr) {
+          tail = nullptr;
+        }
       }
     });
 
