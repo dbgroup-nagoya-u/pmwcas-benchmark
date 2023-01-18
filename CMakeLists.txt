@@ -48,6 +48,10 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-benchmark")
 set(MEMORY_MANAGER_USE_PERSISTENT_MEMORY "ON" CACHE STRING "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/memory-manager")
 
+set(PMWCAS_CAPACITY "${PMWCAS_BENCH_TARGET_NUM}" CACHE STRING "" FORCE)
+set(PMWCAS_DESCRIPTOR_POOL_SIZE "${PMWCAS_BENCH_MAX_THREAD_NUM}" CACHE STRING "" FORCE)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pmwcas")
+
 #--------------------------------------------------------------------------------------#
 # Configure Microsoft's PMwCAS
 #--------------------------------------------------------------------------------------#
@@ -85,6 +89,7 @@ function(PMWCAS_BENCH_ADD_EXECUTABLE PMWCAS_BENCH_TARGET)
     cpp_utility
     cpp_bench
     dbgroup::memory_manager
+    pmwcas::pmwcas
     microsoft_pmwcas
   )
 endfunction()
