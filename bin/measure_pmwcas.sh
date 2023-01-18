@@ -9,6 +9,7 @@ set -ue
 BENCH_BIN=""
 CONFIG_ENV=""
 PMEM_DIR=""
+NUMA_NODES=""
 WORKSPACE_DIR=$(cd $(dirname ${BASH_SOURCE:-${0}})/.. && pwd)
 MEASURE_THROUGHPUT="t"
 
@@ -24,6 +25,7 @@ Arguments:
   <config>: A path to a configuration file for benchmarking.
   <pmem_dir> : A path to a directory on persistent memory.
 Options:
+  -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
   -h: Show this messsage and exit.
   -l: Use latency as a criteria (default: false).
 EOS
@@ -34,9 +36,11 @@ EOS
 # Parse options
 ########################################################################################
 
-while getopts lh OPT
+while getopts n:lh OPT
 do
   case ${OPT} in
+    n) NUMA_NODES=${OPTARG}
+      ;;
     l) MEASURE_THROUGHPUT="f"
       ;;
     h) usage
@@ -59,6 +63,9 @@ BENCH_BIN=${1}
 CONFIG_ENV=${2}
 PMEM_DIR=${3}
 
+if [ -n "${NUMA_NODES}" ]; then
+  BENCH_BIN="numactl -N ${NUMA_NODES} -m ${NUMA_NODES} ${BENCH_BIN}"
+fi
 if [ ! -f "${BENCH_BIN}" ]; then
   echo "There is no specified benchmark binary."
   exit 1
