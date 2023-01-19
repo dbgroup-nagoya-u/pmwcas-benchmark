@@ -24,6 +24,7 @@
 // local sources
 #include "common.hpp"
 #include "queue/queue_lock.hpp"
+#include "queue/queue_microsoft_pmwcas.hpp"
 
 namespace dbgroup::test
 {
@@ -77,7 +78,7 @@ class PmemQueueFixture : public ::testing::Test
   void
   PopEmptyQueue()
   {
-    const auto &value = queue_->pop();
+    const auto &value = queue_->Pop();
     EXPECT_FALSE(value);
   }
 
@@ -89,11 +90,11 @@ class PmemQueueFixture : public ::testing::Test
     std::uniform_int_distribution<uint64_t> uni_dist{};
     for (size_t i = 0; i < kLoopNum; ++i) {
       uint64_t value = uni_dist(rand_engine);
-      queue_->push(value);
+      queue_->Push(value);
       temp.push_back(value);
     }
     for (size_t i = 0; i < kLoopNum; ++i) {
-      const auto &value = queue_->pop();
+      const auto &value = queue_->Pop();
       ASSERT_TRUE(value);
       EXPECT_EQ(*value, temp[i]);
     }
@@ -114,6 +115,7 @@ class PmemQueueFixture : public ::testing::Test
 
 using TestTargets = ::testing::Types<  //
     QueueWithLock<uint64_t>            //
+    // QueueWithMicrosoftPMwCAS<uint64_t>  //
     >;
 TYPED_TEST_SUITE(PmemQueueFixture, TestTargets);
 

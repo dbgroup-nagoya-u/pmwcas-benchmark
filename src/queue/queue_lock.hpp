@@ -85,10 +85,10 @@ class QueueWithLock
    *
    */
   void
-  push(int64_t value)
+  Push(int64_t value)
   {
     ::pmem::obj::transaction::run(pool, [this, &value] {
-      auto n = ::pmem::obj::make_persistent<Node>(value, nullptr);
+      auto &&n = ::pmem::obj::make_persistent<Node>(value, nullptr);
 
       if (head == nullptr) {
         head = n;
@@ -105,13 +105,13 @@ class QueueWithLock
    *
    */
   auto
-  pop()
+  Pop()
   {
     std::optional<int64_t> ret = std::nullopt;
     ::pmem::obj::transaction::run(pool, [this, &ret] {
       if (head) {
         ret = head->value;
-        auto n = head->next;
+        auto &&n = head->next;
 
         ::pmem::obj::delete_persistent<Node>(head);
         head = std::move(n);
