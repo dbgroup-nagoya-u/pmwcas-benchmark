@@ -26,6 +26,7 @@ Arguments:
   <pmem_dir> : A path to a directory on persistent memory.
 Options:
   -h: Show this messsage and exit.
+  -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
   -p: Use priority queues for benchmarks (default: false).
   -l: Use latency as a criteria (default: false).
 EOS
@@ -36,9 +37,11 @@ EOS
 # Parse options
 ########################################################################################
 
-while getopts plh OPT
+while getopts n:plh OPT
 do
   case ${OPT} in
+    n) NUMA_NODES=${OPTARG}
+      ;;
     p) USE_PRIORITY_QUEUE="t"
       ;;
     l) MEASURE_THROUGHPUT="f"
@@ -75,6 +78,11 @@ if [ ! -d "${PMEM_DIR}" ]; then
   echo "There is no specified directory."
   exit 1
 fi
+
+if [ -n "${NUMA_NODES}" ]; then
+  BENCH_BIN="numactl -N ${NUMA_NODES} -m ${NUMA_NODES} ${BENCH_BIN}"
+fi
+
 
 ########################################################################################
 # Run benchmark

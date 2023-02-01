@@ -25,8 +25,8 @@ Arguments:
   <config>: A path to a configuration file for benchmarking.
   <pmem_dir> : A path to a directory on persistent memory.
 Options:
-  -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
   -h: Show this messsage and exit.
+  -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
   -l: Use latency as a criteria (default: false).
 EOS
   exit 1
@@ -63,9 +63,6 @@ BENCH_BIN=${1}
 CONFIG_ENV=${2}
 PMEM_DIR=${3}
 
-if [ -n "${NUMA_NODES}" ]; then
-  BENCH_BIN="numactl -N ${NUMA_NODES} -m ${NUMA_NODES} ${BENCH_BIN}"
-fi
 if [ ! -f "${BENCH_BIN}" ]; then
   echo "There is no specified benchmark binary."
   exit 1
@@ -77,6 +74,10 @@ fi
 if [ ! -d "${PMEM_DIR}" ]; then
   echo "There is no specified directory."
   exit 1
+fi
+
+if [ -n "${NUMA_NODES}" ]; then
+  BENCH_BIN="numactl -N ${NUMA_NODES} -m ${NUMA_NODES} ${BENCH_BIN}"
 fi
 
 ########################################################################################
