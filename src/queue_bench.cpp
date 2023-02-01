@@ -31,6 +31,7 @@
 // local sources
 // #include "queue/priority_queue_pmwcas.hpp"
 #include "queue/priority_queue_microsoft_pmwcas.hpp"
+#include "queue/queue_lock.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
 #include "queue/queue_pmwcas.hpp"
 
@@ -39,7 +40,7 @@
  *####################################################################################*/
 
 /// an alias for lock based implementations.
-// using Lock = QueueWithLock<uint64_t>;
+using Lock = QueueWithLock<uint64_t>;
 
 /// an alias for our PMwCAS based implementations.
 using QueuePMwCAS = QueueWithPMwCAS<uint64_t>;
@@ -91,7 +92,7 @@ Run(  //
 
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
-  {  // initialize a persitent queue with a thousand elements
+  {  // initialize a persistent queue with a thousand elements
     std::mt19937_64 rand_engine{random_seed};
     std::uniform_int_distribution<uint64_t> uni_dist{};
     Queue queue{pmem_dir_str};
@@ -131,11 +132,11 @@ main(int argc, char *argv[])
 
   const std::string pmem_dir_str{argv[1]};
 
-  // run benchmark for each implementaton
+  // run benchmark for each implementation
 
-  // if (FLAGS_lock) {
-  //   Run<Lock>("Global Lock", pmem_dir_str);
-  // }
+  if (FLAGS_lock) {
+    Run<Lock>("Global Lock", pmem_dir_str);
+  }
   if (FLAGS_pmwcas) {
     Run<QueuePMwCAS>("pmwcas: queue", pmem_dir_str);
   }

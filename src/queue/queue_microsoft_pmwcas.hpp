@@ -338,7 +338,7 @@ class QueueWithMicrosoftPMwCAS
    * Internal member variables
    *##################################################################################*/
 
-  /// @brief A pool for node objects on persistent memopry.
+  /// @brief A pool for node objects on persistent memory.
   ::pmem::obj::pool<Root> pool_{};
 
   /// @brief A root pointer in the pool.

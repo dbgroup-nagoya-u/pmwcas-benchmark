@@ -114,10 +114,10 @@ class PmemQueueFixture : public ::testing::Test
  * Preparation for typed testing
  *####################################################################################*/
 
-using TestTargets = ::testing::Types<  //
-    QueueWithPMwCAS<uint64_t>
-    // QueueWithLock<uint64_t>            //
-    // QueueWithMicrosoftPMwCAS<uint64_t>  //
+using TestTargets = ::testing::Types<
+    // QueueWithMicrosoftPMwCAS<uint64_t>,  //
+    QueueWithPMwCAS<uint64_t>,  //
+    QueueWithLock<uint64_t>     //
     >;
 TYPED_TEST_SUITE(PmemQueueFixture, TestTargets);
 
