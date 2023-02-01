@@ -25,6 +25,7 @@
 // local sources
 #include "common.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
+#include "queue/queue_pmwcas.hpp"
 
 namespace dbgroup::test
 {
@@ -175,8 +176,9 @@ class QueueFixture : public ::testing::Test
  * Preparation for typed testing
  *####################################################################################*/
 
-using TestTargets = ::testing::Types<   //
-    QueueWithMicrosoftPMwCAS<uint64_t>  //
+using TestTargets = ::testing::Types<  //
+    QueueWithPMwCAS<uint64_t>
+    //  QueueWithMicrosoftPMwCAS<uint64_t>  //
     >;
 TYPED_TEST_SUITE(QueueFixture, TestTargets);
 
