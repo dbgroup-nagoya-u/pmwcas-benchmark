@@ -241,7 +241,7 @@ class PriorityQueueWithMicrosoftPMwCAS
   CreateQueuePool(const std::string &pool_path)
   {
     try {
-      constexpr size_t kSize = PMEMOBJ_MIN_POOL * 1024;  // 8GB
+      constexpr size_t kSize = PMEMOBJ_MIN_POOL * 256;  // 2GB
       pool_ = ::pmem::obj::pool<Root>::create(pool_path, kQueueLayout, kSize, CREATE_MODE_RW);
       root_ = pool_.root();
       pool_uuid_ = root_.raw().pool_uuid_lo;

@@ -159,7 +159,9 @@ class QueueWithPMwCAS
     auto *head_addr = &(root_->head.off);
     while (true) {
       // check this queue has any element
-      const auto old_ptr = ReadNodeProtected(head_addr);
+      const auto old_ptr = ::dbgroup::atomic::pmwcas::PMwCASDescriptor::Read<uint64_t>(
+          head_addr, std::memory_order_relaxed);
+      ;
       ::pmem::obj::persistent_ptr<Node_t> old_head{PMEMoid{pool_uuid_, old_ptr}};
       const auto new_ptr = ReadNodeProtected(&(old_head->next.off));
       if (new_ptr == kNullPtr) return std::nullopt;
@@ -171,8 +173,7 @@ class QueueWithPMwCAS
 
       if (desc->PMwCAS()) {
         // NOTE: this procedure cannot guarantee fault tolerance
-        ::pmem::obj::persistent_ptr<Node_t> dummy{PMEMoid{pool_uuid_, old_ptr}};
-        gc_->AddGarbage<NodeTarget_t>(dummy.raw_ptr(), pool_);
+        gc_->AddGarbage<NodeTarget_t>(tmp_node_addr->raw_ptr(), pool_);
         ::pmem::obj::persistent_ptr<Node_t> new_head{PMEMoid{pool_uuid_, new_ptr}};
         return new_head->value;
       }

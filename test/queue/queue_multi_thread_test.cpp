@@ -24,6 +24,7 @@
 
 // local sources
 #include "common.hpp"
+#include "queue/queue_lock.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
 #include "queue/queue_pmwcas.hpp"
 
@@ -177,8 +178,9 @@ class QueueFixture : public ::testing::Test
  *####################################################################################*/
 
 using TestTargets = ::testing::Types<  //
-    QueueWithPMwCAS<uint64_t>
-    //  QueueWithMicrosoftPMwCAS<uint64_t>  //
+    QueueWithLock<uint64_t>,
+    QueueWithPMwCAS<uint64_t>  //,            //
+    // QueueWithMicrosoftPMwCAS<uint64_t>  //
     >;
 TYPED_TEST_SUITE(QueueFixture, TestTargets);
 
