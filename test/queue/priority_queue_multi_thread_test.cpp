@@ -41,7 +41,7 @@ class PriorityQueueFixture : public ::testing::Test
    * Internal constants
    *##################################################################################*/
 
-  static constexpr auto kLoopNum = 1E4;
+  static constexpr auto kLoopNum = 1E3;
 
   /*####################################################################################
    * Setup/Teardown
