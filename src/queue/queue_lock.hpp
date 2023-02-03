@@ -24,6 +24,7 @@
 #include <utility>
 // external libraries
 #include <libpmemobj++/make_persistent.hpp>
+#include <libpmemobj++/mutex.hpp>
 #include <libpmemobj++/p.hpp>
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/transaction.hpp>
@@ -40,101 +41,7 @@ class QueueWithLock
 {
  public:
   /*####################################################################################
-   * Type aliases
-   *##################################################################################*/
-
-  using Pool_t = ::pmem::obj::pool<int64_t>;
-
-  /*####################################################################################
-   * Public constructors/destructors
-   *##################################################################################*/
-
-  /**
-   * @brief Construct a new PmemQueue object.
-   *
-   * @param path the path of persistent memory for benchmarking.
-   */
-  QueueWithLock(const std::string &pmem_dir_str)
-  {
-    const auto &pmem_queue_path = GetPath(pmem_dir_str, kQueueLayout);
-    try {
-      if (std::filesystem::exists(pmem_queue_path)) {
-        pool = Pool_t::open(pmem_queue_path, kQueueLayout);
-      } else {
-        constexpr size_t kSize = ((sizeof(int64_t) / PMEMOBJ_MIN_POOL) + 2) * PMEMOBJ_MIN_POOL;
-        pool = Pool_t::create(pmem_queue_path, kQueueLayout, kSize, CREATE_MODE_RW);
-      }
-    } catch (const std::exception &e) {
-      std::cerr << e.what() << '\n';
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  /*####################################################################################
-   * Public destructors
-   *##################################################################################*/
-
-  ~QueueWithLock() { pool.close(); }
-
-  /*####################################################################################
-   * Public utilities
-   *##################################################################################*/
-
-  /**
-   * @brief Inserts a new element at the end of the queue.
-   *
-   */
-  void
-  Push(int64_t value)
-  {
-    ::pmem::obj::transaction::run(pool, [this, &value] {
-      auto &&n = ::pmem::obj::make_persistent<Node>(value, nullptr);
-
-      if (head == nullptr) {
-        head = n;
-        tail = n;
-      } else {
-        tail->next = n;
-        tail = n;
-      }
-    });
-  }
-
-  /**
-   * @brief Removes the first element in the queue.
-   *
-   */
-  auto
-  Pop()
-  {
-    std::optional<int64_t> ret = std::nullopt;
-    ::pmem::obj::transaction::run(pool, [this, &ret] {
-      if (head) {
-        ret = head->value;
-        auto &&n = head->next;
-
-        ::pmem::obj::delete_persistent<Node>(head);
-        head = std::move(n);
-
-        if (head == nullptr) {
-          tail = nullptr;
-        }
-      }
-    });
-
-    return ret;
-  }
-
- private:
-  /*####################################################################################
-   * Internal constants
-   *##################################################################################*/
-
-  /// @brief The layout name for this class.
-  static constexpr char kQueueLayout[] = "queue_lock";
-
-  /*####################################################################################
-   * Private classes
+   * Internal classes
    *##################################################################################*/
 
   /**
@@ -156,16 +63,141 @@ class QueueWithLock
     ::pmem::obj::p<int64_t> value;
   };
 
+  /**
+   * @brief A root class for ::pmem::obj::pool.
+   *
+   */
+  struct Root {
+    /// a mutex object for locking.
+    ::pmem::obj::mutex mtx{};
+
+    /// @brief The head of the queue.
+    ::pmem::obj::persistent_ptr<Node> head{nullptr};
+
+    /// @brief The tail of the queue.
+    ::pmem::obj::persistent_ptr<Node> tail{nullptr};
+  };
+  /*####################################################################################
+   * Type aliases
+   *##################################################################################*/
+
+  using Pool_t = pmem::obj::pool<Root>;
+
+  /*####################################################################################
+   * Public constructors/destructors
+   *##################################################################################*/
+
+  /**
+   * @brief Construct a new PmemQueue object.
+   *
+   * @param path the path of persistent memory for benchmarking.
+   */
+  QueueWithLock(const std::string &pmem_dir_str)
+  {
+    const auto &pmem_queue_path = GetPath(pmem_dir_str, kQueueLayout);
+    try {
+      if (std::filesystem::exists(pmem_queue_path)) {
+        pool_ = Pool_t::open(pmem_queue_path, kQueueLayout);
+      } else {
+        constexpr size_t kSize = ((sizeof(int64_t) / PMEMOBJ_MIN_POOL) + 2) * PMEMOBJ_MIN_POOL;
+        pool_ = Pool_t::create(pmem_queue_path, kQueueLayout, kSize, CREATE_MODE_RW);
+      }
+    } catch (const std::exception &e) {
+      std::cerr << e.what() << '\n';
+      exit(EXIT_FAILURE);
+    }
+    root_ = pool_.root();
+  }
+
+  /*####################################################################################
+   * Public destructors
+   *##################################################################################*/
+
+  ~QueueWithLock() { pool_.close(); }
+
+  /*####################################################################################
+   * Public utilities
+   *##################################################################################*/
+
+  /**
+   * @brief Inserts a new element at the end of the queue.
+   *
+   */
+  void
+  Push(int64_t value)
+  {
+    try {
+      ::pmem::obj::transaction::run(
+          pool_,
+          [this, &value] {
+            auto &&n = ::pmem::obj::make_persistent<Node>(value, nullptr);
+            if (root_->head == nullptr) {
+              root_->head = n;
+              root_->tail = n;
+            } else {
+              root_->tail->next = n;
+              root_->tail = n;
+            }
+          },
+          root_->mtx);
+    } catch (const ::pmem::transaction_error &e) {
+      std::cerr << e.what() << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  /**
+   * @brief Removes the first element in the queue.
+   *
+   */
+  auto
+  Pop()
+  {
+    try {
+      std::optional<int64_t> ret = std::nullopt;
+      ::pmem::obj::transaction::run(
+          pool_,
+          [this, &ret] {
+            if (root_->head) {
+              ret = root_->head->value;
+              auto &&n = root_->head->next;
+
+              ::pmem::obj::delete_persistent<Node>(root_->head);
+              root_->head = std::move(n);
+
+              if (root_->head == nullptr) {
+                root_->tail = nullptr;
+              }
+            }
+          },
+          root_->mtx);
+
+      return ret;
+    } catch (const ::pmem::transaction_error &e) {
+      std::cerr << e.what() << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+ private:
+  /*####################################################################################
+   * Internal constants
+   *##################################################################################*/
+
+  /// @brief The layout name for this class.
+  static constexpr char kQueueLayout[] = "queue_lock";
+
   /*####################################################################################
    * Internal member variables
    *##################################################################################*/
+  /// @brief A pool for node objects on persistent memory.
+  ::pmem::obj::pool<Root> pool_{};
 
-  Pool_t pool;
+  /// @brief A root pointer in the pool.
+  ::pmem::obj::persistent_ptr<Root> root_{nullptr};
 
-  // The head of the queue
-  ::pmem::obj::persistent_ptr<Node> head;
-  // The tail of the queue
-  ::pmem::obj::persistent_ptr<Node> tail;
+  /// @brief The UUID of the pool.
+  size_t pool_uuid_{kNullPtr};
 };
 
 #endif  // PMWCAS_BENCHMARK_QUEUE_PMEM_QUEUE_HPP
