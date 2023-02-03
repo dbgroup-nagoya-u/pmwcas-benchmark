@@ -22,6 +22,7 @@
 #include <optional>
 #include <sstream>
 #include <utility>
+
 // external libraries
 #include <libpmemobj++/make_persistent.hpp>
 #include <libpmemobj++/mutex.hpp>
@@ -29,6 +30,7 @@
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/transaction.hpp>
 #include <libpmemobj++/utils.hpp>
+
 // local sources
 #include "common.hpp"
 
@@ -77,6 +79,7 @@ class QueueWithLock
     /// @brief The tail of the queue.
     ::pmem::obj::persistent_ptr<Node> tail{nullptr};
   };
+
   /*####################################################################################
    * Type aliases
    *##################################################################################*/
