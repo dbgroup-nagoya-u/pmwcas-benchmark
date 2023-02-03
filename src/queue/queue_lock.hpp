@@ -102,7 +102,7 @@ class QueueWithLock
       if (std::filesystem::exists(pmem_queue_path)) {
         pool_ = Pool_t::open(pmem_queue_path, kQueueLayout);
       } else {
-        constexpr size_t kSize = ((sizeof(int64_t) / PMEMOBJ_MIN_POOL) + 2) * PMEMOBJ_MIN_POOL;
+        constexpr size_t kSize = PMEMOBJ_MIN_POOL * 256;  // 2GB
         pool_ = Pool_t::create(pmem_queue_path, kQueueLayout, kSize, CREATE_MODE_RW);
       }
     } catch (const std::exception &e) {
