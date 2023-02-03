@@ -59,6 +59,8 @@ class QueueWithPMwCAS
   using NodeTarget_t = NodeTarget<!kReusePageOnPMEM>;
   using GC_t = ::dbgroup::memory::EpochBasedGC<NodeTarget_t>;
   using GarbageNode_t = ::dbgroup::memory::GarbageNodeOnPMEM<NodeTarget_t>;
+  using DescriptorPool = ::dbgroup::atomic::pmwcas::DescriptorPool;
+  using PMwCASDescriptor = ::dbgroup::atomic::pmwcas::PMwCASDescriptor;
 
   /*####################################################################################
    * Public constructors/destructors
@@ -86,8 +88,7 @@ class QueueWithPMwCAS
 
     // prepare a descriptor pool for PMwCAS
     const auto &pmwcas_path = GetPath(pmem_dir_str, kPMwCASLayout);
-    pmwcas_desc_pool_ =
-        std::make_unique<::dbgroup::atomic::pmwcas::DescriptorPool>(pmwcas_path, kPMwCASLayout);
+    pmwcas_desc_pool_ = std::make_unique<DescriptorPool>(pmwcas_path, kPMwCASLayout);
   }
 
   /*####################################################################################
@@ -129,7 +130,7 @@ class QueueWithPMwCAS
       auto *desc = pmwcas_desc_pool_->Get();
 
       // prepare PMwCAS targets
-      const auto old_ptr = ReadNodeProtected(tail_addr);
+      const auto old_ptr = PMwCASDescriptor::Read<uint64_t>(tail_addr, std::memory_order_relaxed);
       ::pmem::obj::persistent_ptr<Node_t> tail_node{PMEMoid{pool_uuid_, old_ptr}};
       desc->AddPMwCASTarget(&(tail_node->next.off), kNullPtr, new_ptr);
       desc->AddPMwCASTarget(tail_addr, old_ptr, new_ptr);
@@ -159,11 +160,11 @@ class QueueWithPMwCAS
     auto *head_addr = &(root_->head.off);
     while (true) {
       // check this queue has any element
-      const auto old_ptr = ::dbgroup::atomic::pmwcas::PMwCASDescriptor::Read<uint64_t>(
-          head_addr, std::memory_order_relaxed);
-      ;
+      const auto old_ptr = PMwCASDescriptor::Read<uint64_t>(head_addr, std::memory_order_relaxed);
+
       ::pmem::obj::persistent_ptr<Node_t> old_head{PMEMoid{pool_uuid_, old_ptr}};
-      const auto new_ptr = ReadNodeProtected(&(old_head->next.off));
+      const auto new_ptr =
+          PMwCASDescriptor::Read<uint64_t>(&(old_head->next.off), std::memory_order_relaxed);
       if (new_ptr == kNullPtr) return std::nullopt;
 
       // prepare PMwCAS targets
@@ -276,18 +277,6 @@ class QueueWithPMwCAS
    *##################################################################################*/
 
   /**
-   * @param addr a target memory address.
-   * @return a value of PMEMoid.off in the given address.
-   */
-  static auto
-  ReadNodeProtected(size_t *addr)  //
-      -> size_t
-  {
-    return ::dbgroup::atomic::pmwcas::PMwCASDescriptor::Read<uint64_t>(addr,
-                                                                       std::memory_order_relaxed);
-  }
-
-  /**
    * @return the reserved address for node pointers.
    */
   auto
@@ -329,7 +318,7 @@ class QueueWithPMwCAS
   std::unique_ptr<GC_t> gc_{nullptr};
 
   /// @brief The pool of PMwCAS descriptors.
-  std::unique_ptr<::dbgroup::atomic::pmwcas::DescriptorPool> pmwcas_desc_pool_{nullptr};
+  std::unique_ptr<DescriptorPool> pmwcas_desc_pool_{nullptr};
 
   /// @brief An array representing the occupied state of the descriptor pool
   std::shared_ptr<std::atomic_bool[]> reserve_arr_{new std::atomic_bool[kMaxThreadNum]};
