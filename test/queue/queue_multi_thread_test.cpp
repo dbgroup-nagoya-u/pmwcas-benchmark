@@ -24,6 +24,7 @@
 
 // local sources
 #include "common.hpp"
+#include "queue/queue_lock.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
 
 namespace dbgroup::test
@@ -176,6 +177,7 @@ class QueueFixture : public ::testing::Test
  *####################################################################################*/
 
 using TestTargets = ::testing::Types<   //
+    QueueWithLock<uint64_t>,            //
     QueueWithMicrosoftPMwCAS<uint64_t>  //
     >;
 TYPED_TEST_SUITE(QueueFixture, TestTargets);
