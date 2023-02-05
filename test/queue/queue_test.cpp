@@ -25,6 +25,7 @@
 #include "common.hpp"
 #include "queue/queue_lock.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
+#include "queue/queue_pmwcas.hpp"
 
 namespace dbgroup::test
 {
@@ -113,9 +114,10 @@ class PmemQueueFixture : public ::testing::Test
  * Preparation for typed testing
  *####################################################################################*/
 
-using TestTargets = ::testing::Types<   //
-    QueueWithLock<uint64_t>,            //
-    QueueWithMicrosoftPMwCAS<uint64_t>  //
+using TestTargets = ::testing::Types<  //
+    QueueWithLock<uint64_t>,
+    QueueWithPMwCAS<uint64_t>  //,  //
+    // QueueWithMicrosoftPMwCAS<uint64_t>  //
     >;
 TYPED_TEST_SUITE(PmemQueueFixture, TestTargets);
 

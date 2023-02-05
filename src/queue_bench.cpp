@@ -30,19 +30,20 @@
 
 // local sources
 // #include "queue/priority_queue_pmwcas.hpp"
-// #include "queue/queue_pmwcas.hpp"
 #include "queue/priority_queue_microsoft_pmwcas.hpp"
+#include "queue/queue_lock.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
+#include "queue/queue_pmwcas.hpp"
 
 /*######################################################################################
  * Type aliases for competitors
  *####################################################################################*/
 
 /// an alias for lock based implementations.
-// using Lock = QueueWithLock<uint64_t>;
+using Lock = QueueWithLock<uint64_t>;
 
 /// an alias for our PMwCAS based implementations.
-// using QueuePMwCAS = QueueWithPMwCAS<uint64_t>;
+using QueuePMwCAS = QueueWithPMwCAS<uint64_t>;
 // using PriorityQueuePMwCAS = PriorityQueueWithPMwCAS<uint64_t>;
 
 /// an alias for microsoft/pmwcas based implementations.
@@ -60,6 +61,7 @@ DEFINE_uint64(timeout, 10, "Seconds to timeout");
 DEFINE_bool(csv, false, "Output benchmark results as CSV format.");
 DEFINE_bool(throughput, true, "true: measure throughput, false: measure latency.");
 DEFINE_bool(use_priority_queue, false, "Use priority queues for benchmarks.");
+DEFINE_bool(pmwcas, false, "Use our PMwCAS as a benchmark target.");
 DEFINE_bool(lock, false, "Use an exclusive lock as a benchmark target.");
 DEFINE_bool(microsoft_pmwcas, false, "Use a microsoft/pmwcas as a benchmark target.");
 
@@ -90,7 +92,7 @@ Run(  //
 
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}() : std::stoul(FLAGS_seed);
 
-  {  // initialize a persitent queue with a thousand elements
+  {  // initialize a persistent queue with a thousand elements
     std::mt19937_64 rand_engine{random_seed};
     std::uniform_int_distribution<uint64_t> uni_dist{};
     Queue queue{pmem_dir_str};
@@ -130,11 +132,14 @@ main(int argc, char *argv[])
 
   const std::string pmem_dir_str{argv[1]};
 
-  // run benchmark for each implementaton
+  // run benchmark for each implementation
 
-  // if (FLAGS_lock) {
-  //   Run<Lock>("Global Lock", pmem_dir_str);
-  // }
+  if (FLAGS_lock) {
+    Run<Lock>("Global Lock", pmem_dir_str);
+  }
+  if (FLAGS_pmwcas) {
+    Run<QueuePMwCAS>("pmwcas: queue", pmem_dir_str);
+  }
   if (FLAGS_microsoft_pmwcas) {
     if (FLAGS_use_priority_queue) {
       Run<PriorityQueueMicrosoftPMwCAS>("microsoft/pmwcas: priority queue", pmem_dir_str);
