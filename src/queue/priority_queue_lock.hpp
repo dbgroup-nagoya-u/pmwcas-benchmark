@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Database Group, Nagoya University
+ * Copyright 2023 Database Group, Nagoya University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class PriorityQueueWithLock
    * @brief Internal node definition.
    */
   struct Node {
-    /*!
+    /**
      * @brief Constructor.
      *
      */
@@ -135,23 +135,27 @@ class PriorityQueueWithLock
           [this, &value] {
             auto &&n = ::pmem::obj::make_persistent<Node>(value, nullptr);
             if (root_->head == nullptr) {
+              // add a new element to the empty queue
               root_->head = n;
               root_->tail = n;
-            } else {
-              if (value > root_->head->value) {
-                n->next = root_->head;
-                root_->head = n;
-              } else {
-                auto curr = root_->head;
-                while (curr->next != nullptr && curr->next->value > value) {
-                  curr = curr->next;
-                }
-                n->next = curr->next;
-                curr->next = n;
-                if (n->next == nullptr) {
-                  root_->tail = n;
-                }
-              }
+              return;
+            }
+
+            auto cur = root_->head;
+            if (value > cur->value) {
+              // add a new element to the begin position
+              n->next = cur;
+              root_->head = n;
+            }
+
+            // search the position to be inserted
+            while (cur->next != nullptr && cur->next->value > value) {
+              cur = cur->next;
+            }
+            n->next = cur->next;
+            cur->next = n;
+            if (n->next == nullptr) {
+              root_->tail = n;
             }
           },
           root_->mtx);
