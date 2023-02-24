@@ -39,7 +39,7 @@
  *
  */
 template <class T>
-class QueueWithLock
+class PriorityQueueWithLock
 {
  public:
   /*####################################################################################
@@ -50,11 +50,11 @@ class QueueWithLock
    * @brief Internal node definition.
    */
   struct Node {
-    /*!
+    /**
      * @brief Constructor.
      *
      */
-    Node(int64_t val, ::pmem::obj::persistent_ptr<Node> n)
+    Node(uint64_t val, ::pmem::obj::persistent_ptr<Node> n)
         : next(std::move(n)), value(std::move(val))
     {
     }
@@ -62,7 +62,7 @@ class QueueWithLock
     // Pointer to the next node
     ::pmem::obj::persistent_ptr<Node> next;
     // Value held by this node
-    ::pmem::obj::p<int64_t> value;
+    ::pmem::obj::p<uint64_t> value;
   };
 
   /**
@@ -95,7 +95,7 @@ class QueueWithLock
    *
    * @param path the path of persistent memory for benchmarking.
    */
-  QueueWithLock(const std::string &pmem_dir_str)
+  PriorityQueueWithLock(const std::string &pmem_dir_str)
   {
     const auto &pmem_queue_path = GetPath(pmem_dir_str, kQueueLayout);
     try {
@@ -116,7 +116,7 @@ class QueueWithLock
    * Public destructors
    *##################################################################################*/
 
-  ~QueueWithLock() { pool_.close(); }
+  ~PriorityQueueWithLock() { pool_.close(); }
 
   /*####################################################################################
    * Public utilities
@@ -127,7 +127,7 @@ class QueueWithLock
    *
    */
   void
-  Push(int64_t value)
+  Push(uint64_t value)
   {
     try {
       ::pmem::obj::transaction::run(
@@ -135,10 +135,26 @@ class QueueWithLock
           [this, &value] {
             auto &&n = ::pmem::obj::make_persistent<Node>(value, nullptr);
             if (root_->head == nullptr) {
+              // add a new element to the empty queue
               root_->head = n;
               root_->tail = n;
-            } else {
-              root_->tail->next = n;
+              return;
+            }
+
+            auto cur = root_->head;
+            if (value > cur->value) {
+              // add a new element to the begin position
+              n->next = cur;
+              root_->head = n;
+            }
+
+            // search the position to be inserted
+            while (cur->next != nullptr && cur->next->value > value) {
+              cur = cur->next;
+            }
+            n->next = cur->next;
+            cur->next = n;
+            if (n->next == nullptr) {
               root_->tail = n;
             }
           },
@@ -157,7 +173,7 @@ class QueueWithLock
   Pop()
   {
     try {
-      std::optional<int64_t> ret = std::nullopt;
+      std::optional<uint64_t> ret = std::nullopt;
       ::pmem::obj::transaction::run(
           pool_,
           [this, &ret] {
@@ -188,7 +204,7 @@ class QueueWithLock
    *##################################################################################*/
 
   /// @brief The layout name for this class.
-  static constexpr char kQueueLayout[] = "queue_lock";
+  static constexpr char kQueueLayout[] = "priority_queue_lock";
 
   /*####################################################################################
    * Internal member variables

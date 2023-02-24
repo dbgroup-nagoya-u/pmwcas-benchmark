@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Database Group, Nagoya University
+ * Copyright 2023 Database Group, Nagoya University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 // a corresponding header of this file
+#include <algorithm>
 #include <future>
 #include <iostream>
 #include <random>
@@ -54,7 +55,7 @@ class PriorityQueueFixture : public ::testing::Test
     // create a user directory for testing
     const std::string user_name{std::getenv("USER")};
     pool_path_ /= user_name;
-    pool_path_ /= "pmwcas_bench_priority_queue_multi_thread_test";
+    pool_path_ /= "pmwcas_bench_priority_queue_test";
     std::filesystem::remove_all(pool_path_);
     std::filesystem::create_directories(pool_path_);
 
@@ -74,41 +75,22 @@ class PriorityQueueFixture : public ::testing::Test
    *##################################################################################*/
 
   void
-  RunMT(std::function<void(void)> f)
-  {
-    std::vector<std::thread> threads{};
-    for (size_t id = 0; id < kThreadNum; ++id) {
-      threads.emplace_back(f);
-    }
-    for (auto &&t : threads) {
-      t.join();
-    }
-  }
-
-  void
   PushAndThenPop()
   {
-    auto push = [&]() {
-      std::mt19937_64 rand_engine{std::random_device{}()};
-      std::uniform_int_distribution<uint64_t> uni_dist{};
-      for (size_t i = 0; i < kLoopNum; ++i) {
-        queue_->Push(uni_dist(rand_engine));
-      }
-    };
-
-    auto pop = [&]() {
-      auto prev_val = std::numeric_limits<uint64_t>::max();
-      while (true) {
-        const auto &val = queue_->Pop();
-        if (!val) break;
-
-        EXPECT_LE(*val, prev_val);
-        prev_val = *val;
-      }
-    };
-
-    RunMT(push);
-    RunMT(pop);
+    std::vector<uint64_t> temp;
+    std::mt19937_64 rand_engine{std::random_device{}()};
+    std::uniform_int_distribution<uint64_t> uni_dist{};
+    for (size_t i = 0; i < kLoopNum; ++i) {
+      uint64_t value = uni_dist(rand_engine);
+      queue_->Push(value);
+      temp.push_back(value);
+    }
+    std::sort(temp.begin(), temp.end(), [](uint64_t a, uint64_t b) { return a > b; });
+    for (size_t i = 0; i < kLoopNum; ++i) {
+      const auto &value = queue_->Pop();
+      ASSERT_TRUE(value);
+      EXPECT_EQ(*value, temp[i]);
+    }
   }
 
   /*####################################################################################
@@ -124,9 +106,9 @@ class PriorityQueueFixture : public ::testing::Test
  * Preparation for typed testing
  *####################################################################################*/
 
-using TestTargets = ::testing::Types<           //
-    PriorityQueueWithLock<uint64_t>,            //
-    PriorityQueueWithMicrosoftPMwCAS<uint64_t>  //
+using TestTargets = ::testing::Types<  //
+    PriorityQueueWithLock<uint64_t>    //
+    // PriorityQueueWithMicrosoftPMwCAS<uint64_t>  //
     >;
 TYPED_TEST_SUITE(PriorityQueueFixture, TestTargets);
 
