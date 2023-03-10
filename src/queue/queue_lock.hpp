@@ -124,7 +124,7 @@ class QueueWithLock
    *
    */
   void
-  Push(T value)
+  Push(const T &value)
   {
     try {
       ::pmem::obj::transaction::run(
