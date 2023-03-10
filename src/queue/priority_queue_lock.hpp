@@ -54,15 +54,12 @@ class PriorityQueueWithLock
      * @brief Constructor.
      *
      */
-    Node(uint64_t val, ::pmem::obj::persistent_ptr<Node> n)
-        : next(std::move(n)), value(std::move(val))
-    {
-    }
+    Node(T val, ::pmem::obj::persistent_ptr<Node> n) : next(std::move(n)), value(std::move(val)) {}
 
     // Pointer to the next node
     ::pmem::obj::persistent_ptr<Node> next;
     // Value held by this node
-    ::pmem::obj::p<uint64_t> value;
+    ::pmem::obj::p<T> value;
   };
 
   /**
@@ -127,7 +124,7 @@ class PriorityQueueWithLock
    *
    */
   void
-  Push(uint64_t value)
+  Push(T value)
   {
     try {
       ::pmem::obj::transaction::run(
@@ -173,7 +170,7 @@ class PriorityQueueWithLock
   Pop()
   {
     try {
-      std::optional<uint64_t> ret = std::nullopt;
+      std::optional<T> ret = std::nullopt;
       ::pmem::obj::transaction::run(
           pool_,
           [this, &ret] {
