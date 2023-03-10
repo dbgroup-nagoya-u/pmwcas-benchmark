@@ -54,15 +54,12 @@ class QueueWithLock
      * @brief Constructor.
      *
      */
-    Node(int64_t val, ::pmem::obj::persistent_ptr<Node> n)
-        : next(std::move(n)), value(std::move(val))
-    {
-    }
+    Node(T val, ::pmem::obj::persistent_ptr<Node> n) : next(std::move(n)), value(std::move(val)) {}
 
     // Pointer to the next node
     ::pmem::obj::persistent_ptr<Node> next;
     // Value held by this node
-    ::pmem::obj::p<int64_t> value;
+    ::pmem::obj::p<T> value;
   };
 
   /**
@@ -127,7 +124,7 @@ class QueueWithLock
    *
    */
   void
-  Push(int64_t value)
+  Push(const T &value)
   {
     try {
       ::pmem::obj::transaction::run(
@@ -157,7 +154,7 @@ class QueueWithLock
   Pop()
   {
     try {
-      std::optional<int64_t> ret = std::nullopt;
+      std::optional<T> ret = std::nullopt;
       ::pmem::obj::transaction::run(
           pool_,
           [this, &ret] {

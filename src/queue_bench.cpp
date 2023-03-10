@@ -29,7 +29,6 @@
 #include "queue/operation_engine.hpp"
 
 // local sources
-// #include "queue/priority_queue_pmwcas.hpp"
 #include "queue/priority_queue_microsoft_pmwcas.hpp"
 #include "queue/queue_lock.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
@@ -44,7 +43,6 @@ using Lock = QueueWithLock<uint64_t>;
 
 /// an alias for our PMwCAS based implementations.
 using QueuePMwCAS = QueueWithPMwCAS<uint64_t>;
-// using PriorityQueuePMwCAS = PriorityQueueWithPMwCAS<uint64_t>;
 
 /// an alias for microsoft/pmwcas based implementations.
 using QueueMicrosoftPMwCAS = QueueWithMicrosoftPMwCAS<uint64_t>;
