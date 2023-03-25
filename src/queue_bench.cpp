@@ -30,6 +30,7 @@
 
 // local sources
 #include "queue/priority_queue_microsoft_pmwcas.hpp"
+#include "queue/priority_queue_pmwcas.hpp"
 #include "queue/queue_lock.hpp"
 #include "queue/queue_microsoft_pmwcas.hpp"
 #include "queue/queue_pmwcas.hpp"
@@ -43,6 +44,7 @@ using Lock = QueueWithLock<uint64_t>;
 
 /// an alias for our PMwCAS based implementations.
 using QueuePMwCAS = QueueWithPMwCAS<uint64_t>;
+using PriorityQueuePMwCAS = PriorityQueueWithPMwCAS<uint64_t>;
 
 /// an alias for microsoft/pmwcas based implementations.
 using QueueMicrosoftPMwCAS = QueueWithMicrosoftPMwCAS<uint64_t>;
@@ -136,7 +138,11 @@ main(int argc, char *argv[])
     Run<Lock>("Global Lock", pmem_dir_str);
   }
   if (FLAGS_pmwcas) {
-    Run<QueuePMwCAS>("pmwcas: queue", pmem_dir_str);
+    if (FLAGS_use_priority_queue) {
+      Run<PriorityQueuePMwCAS>("pmwcas: priority queue", pmem_dir_str);
+    } else {
+      Run<QueuePMwCAS>("pmwcas: queue", pmem_dir_str);
+    }
   }
   if (FLAGS_microsoft_pmwcas) {
     if (FLAGS_use_priority_queue) {
