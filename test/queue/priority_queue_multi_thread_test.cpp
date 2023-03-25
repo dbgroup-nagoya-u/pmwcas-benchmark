@@ -27,6 +27,7 @@
 #include "common.hpp"
 #include "queue/priority_queue_lock.hpp"
 #include "queue/priority_queue_microsoft_pmwcas.hpp"
+#include "queue/priority_queue_pmwcas.hpp"
 
 namespace dbgroup::test
 {
@@ -124,9 +125,10 @@ class PriorityQueueFixture : public ::testing::Test
  * Preparation for typed testing
  *####################################################################################*/
 
-using TestTargets = ::testing::Types<           //
-    PriorityQueueWithLock<uint64_t>,            //
-    PriorityQueueWithMicrosoftPMwCAS<uint64_t>  //
+using TestTargets = ::testing::Types<  //
+    PriorityQueueWithLock<uint64_t>,   //
+    PriorityQueueWithMicrosoftPMwCAS<uint64_t>,
+    PriorityQueueWithPMwCAS<uint64_t>  //
     >;
 TYPED_TEST_SUITE(PriorityQueueFixture, TestTargets);
 
