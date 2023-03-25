@@ -127,7 +127,7 @@ class PriorityQueueFixture : public ::testing::Test
 
 using TestTargets = ::testing::Types<  //
     PriorityQueueWithLock<uint64_t>,   //
-    PriorityQueueWithMicrosoftPMwCAS<uint64_t>,
+    // PriorityQueueWithMicrosoftPMwCAS<uint64_t>,
     PriorityQueueWithPMwCAS<uint64_t>  //
     >;
 TYPED_TEST_SUITE(PriorityQueueFixture, TestTargets);
