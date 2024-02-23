@@ -31,9 +31,6 @@
 /// a file permission for pmemobj_pool.
 #define CREATE_MODE_RW (S_IWUSR | S_IRUSR)
 
-/// @brief The maximum number of threads for benchmarking.
-constexpr size_t kMaxThreadNum = PMWCAS_BENCH_MAX_THREAD_NUM;
-
 /// @brief The interval of GC threads in micro seconds.
 constexpr size_t kGCInterval = 1E5;
 

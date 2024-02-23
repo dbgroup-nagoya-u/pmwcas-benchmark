@@ -1,6 +1,6 @@
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 # Configure GoogleTest
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 
 include(FetchContent)
 FetchContent_Declare(
@@ -10,9 +10,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 # Configurations for unit tests
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 
 set(
   DBGROUP_TEST_THREAD_NUM
@@ -26,9 +26,9 @@ set(
   "The path to a durable storage."
 )
 
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 # Build Unit Tests
-#--------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 
 # define function to add unit tests in the same format
 function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
@@ -54,19 +54,21 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
   )
   target_include_directories(${DBGROUP_TEST_TARGET} PRIVATE
     "${PROJECT_SOURCE_DIR}/src"
-    "${LIBPMEMOBJ++_INCLUDE_DIRS}"
+    "${LIBPMEM_INCLUDE_DIRS}"
+    "${LIBPMEMOBJ_INCLUDE_DIRS}"
   )
   target_link_libraries(${DBGROUP_TEST_TARGET} PRIVATE
-    ${LIBPMEMOBJ++_LIBRARIES}
-    cpp_utility
+    ${LIBPMEM_LIBRARIES}
+    ${LIBPMEMOBJ_LIBRARIES}
+    dbgroup::cpp_utility
     dbgroup::memory_manager
-    pmwcas::pmwcas
-    microsoft_pmwcas
-    gtest_main
+    dbgroup::pmwcas
+    microsoft::pmwcas
+    GTest::gtest_main
   )
 
   add_test(NAME ${DBGROUP_TEST_TARGET} COMMAND $<TARGET_FILE:${DBGROUP_TEST_TARGET}>)
 endfunction()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/array")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/queue")
+# add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/queue")
