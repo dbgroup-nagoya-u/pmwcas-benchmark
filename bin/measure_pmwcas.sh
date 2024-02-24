@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ue
+set -u
 
 ########################################################################################
 # Documents
@@ -88,17 +88,27 @@ source "${CONFIG_ENV}"
 
 for IMPL in ${IMPL_CANDIDATES}; do
   for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
-    for THREAD_NUM in ${THREAD_CANDIDATES}; do
-      for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
-        echo -n "${IMPL},${SKEW_PARAMETER},${THREAD_NUM},"
-        ${BENCH_BIN} \
-          --csv \
-          --throughput=${MEASURE_THROUGHPUT} \
-          --${IMPL} \
-          --num_exec ${OPERATION_COUNT} \
-          --num_thread ${THREAD_NUM} \
-          --skew_parameter ${SKEW_PARAMETER} \
-          ${PMEM_DIR}
+    for TARGET_NUM in ${TARGET_CANDIDATES}; do
+      for THREAD_NUM in ${THREAD_CANDIDATES}; do
+        for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
+          echo -n "${IMPL},${TARGET_NUM},${SKEW_PARAMETER},${THREAD_NUM},"
+          while : ; do
+            timeout "30s" \
+              ${BENCH_BIN} \
+              --${IMPL} \
+              --csv \
+              --throughput=${MEASURE_THROUGHPUT} \
+              --num_exec ${OPERATION_COUNT} \
+              --num_thread ${THREAD_NUM} \
+              --skew_parameter ${SKEW_PARAMETER} \
+              --arr-cap ${ARRAY_CAPACITY} \
+              ${PMEM_DIR} \
+              ${TARGET_NUM}
+            if [ ${?} -eq 0 ]; then
+              break
+            fi
+          done
+        done
       done
     done
   done

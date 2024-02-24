@@ -1,6 +1,12 @@
 # PMwCAS Benchmark
 
-[![Ubuntu-22.04](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/unit_tests.yaml/badge.svg?branch=main)](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/unit_tests.yaml)
+[![Ubuntu-20.04](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/unit_tests.yaml/badge.svg?branch=main)](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/unit_tests.yaml)
+
+- [Build](#build)
+    - [Prerequisites](#prerequisites)
+    - [Build Options](#build-options)
+    - [Build and Run Unit Tests](#build-and-run-unit-tests)
+- [Usage](#usage)
 
 ## Build
 
@@ -25,6 +31,7 @@ cd pmwcas-benchmark
 #### Parameters for Benchmarking
 
 - `PMWCAS_BENCH_MAX_TARGET_NUM`: The maximum number of target words of PMwCAS (default: `8`).
+- `PMWCAS_USE_DIRTY_FLAG`: Use dirty flags to indicate words that are not persisted (please refer to our [pmwcas](https://github.com/dbgroup-nagoya-u/pmwcas)).
 - `DBGROUP_MAX_THREAD_NUM`: The maximum number of worker threads (please refer to [cpp-utility](https://github.com/dbgroup-nagoya-u/cpp-utility)).
 
 #### Parameters for Unit Testing
@@ -48,6 +55,18 @@ The following command displays available CLI options:
 
 ```bash
 ./build/pmwcas_bench --helpshort
+```
+
+The benchmark program requires a path to persistent memory and the number of target words.
+
+```bash
+./build/pmwcas_bench --<competitor> <path_to_pmem_dir> <target_word_num>
+```
+
+For example, the following command performs P3wCAS benchmark with our PMwCAS implementation.
+
+```bash
+./build/pmwcas_bench --pmwcas /pmem_tmp/ 3
 ```
 
 We prepare scripts in `bin` directory to measure performance with a variety of parameters. You can set parameters for benchmarking by `config/bench.env`.
