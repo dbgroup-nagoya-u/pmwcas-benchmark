@@ -22,7 +22,7 @@ set(
 
 set(
   DBGROUP_TEST_TMP_PMEM_PATH
-  "/tmp" CACHE STRING
+  "" CACHE STRING
   "The path to a durable storage."
 )
 
@@ -48,12 +48,10 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
   target_compile_definitions(${DBGROUP_TEST_TARGET} PRIVATE
     DBGROUP_TEST_THREAD_NUM=${DBGROUP_TEST_THREAD_NUM}
     DBGROUP_TEST_TMP_PMEM_PATH=${DBGROUP_TEST_TMP_PMEM_PATH}
-    PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
-    PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
-    PMWCAS_BENCH_MAX_THREAD_NUM=${PMWCAS_BENCH_MAX_THREAD_NUM}
+    PMWCAS_BENCH_MAX_TARGET_NUM=${PMWCAS_BENCH_MAX_TARGET_NUM}
   )
   target_include_directories(${DBGROUP_TEST_TARGET} PRIVATE
-    "${PROJECT_SOURCE_DIR}/src"
+    "${PROJECT_SOURCE_DIR}/include"
     "${LIBPMEM_INCLUDE_DIRS}"
     "${LIBPMEMOBJ_INCLUDE_DIRS}"
   )
@@ -61,7 +59,6 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
     ${LIBPMEM_LIBRARIES}
     ${LIBPMEMOBJ_LIBRARIES}
     dbgroup::cpp_utility
-    dbgroup::memory_manager
     dbgroup::pmwcas
     microsoft::pmwcas
     GTest::gtest_main
@@ -71,4 +68,3 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
 endfunction()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/array")
-# add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/queue")

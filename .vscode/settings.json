@@ -11,7 +11,7 @@
   // files settings
   "files.insertFinalNewline": false,
   "files.trimFinalNewlines": true,
-  "files.trimTrailingWhitespace": false,
+  "files.trimTrailingWhitespace": true,
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
@@ -76,6 +76,7 @@
     "mwcas",
     "numactl",
     "NUMS",
+    "PCAS",
     "PMDK",
     "PMEM",
     "pmemobj",

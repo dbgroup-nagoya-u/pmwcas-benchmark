@@ -43,7 +43,7 @@ target_include_directories(microsoft_pmwcas PRIVATE
   "${LIBPMEMOBJ_INCLUDE_DIRS}"
 )
 target_compile_definitions(microsoft_pmwcas PUBLIC
-  DESC_CAP=${PMWCAS_BENCH_TARGET_NUM}
+  DESC_CAP=${PMWCAS_BENCH_MAX_TARGET_NUM}
   PMEM
   PMDK
 )

@@ -19,6 +19,7 @@
 
 // C++ standard libraries
 #include <algorithm>
+#include <cstddef>
 #include <random>
 #include <utility>
 #include <vector>
@@ -31,30 +32,34 @@
 
 class OperationEngine
 {
-  /*####################################################################################
+  /*############################################################################
    * Type aliases
-   *##################################################################################*/
+   *##########################################################################*/
 
   using ZipfDist_t = ::dbgroup::random::ApproxZipfDistribution<size_t>;
 
  public:
-  /*####################################################################################
+  /*############################################################################
    * Public constructors and assignment operators
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
    * @brief Construct a new OperationEngine object.
    *
-   * @param skew_param a skew parameter in Zipf's law.
-   * @param random_seed a seed value for reproducibility.
+   * @param target_num The number of target words fow PMwCAS.
+   * @param array_cap The capacity of an array.
+   * @param skew_param A skew parameter in Zipf's law.
+   * @param random_seed A seed value for reproducibility.
    */
   OperationEngine(  //
+      const size_t target_num,
+      const size_t array_cap,
       const double skew_param,
       const size_t random_seed)
-      : zipf_dist_{0, kElementNum - 1, skew_param}
+      : target_num_{target_num}, zipf_dist_{0, array_cap - 1, skew_param}
   {
-    pos_index_.reserve(kElementNum);
-    for (size_t i = 0; i < kElementNum; ++i) {
+    pos_index_.reserve(array_cap);
+    for (size_t i = 0; i < array_cap; ++i) {
       pos_index_.emplace_back(i);
     }
     std::mt19937_64 rand_engine{random_seed};
@@ -62,26 +67,25 @@ class OperationEngine
   }
 
   OperationEngine(const OperationEngine &) = default;
-  OperationEngine &operator=(const OperationEngine &obj) = default;
   OperationEngine(OperationEngine &&) = default;
+
+  OperationEngine &operator=(const OperationEngine &obj) = default;
   OperationEngine &operator=(OperationEngine &&) = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public destructors
-   *##################################################################################*/
+   *##########################################################################*/
 
   ~OperationEngine() = default;
 
-  /*####################################################################################
+  /*############################################################################
    * Public utility functions
-   *##################################################################################*/
+   *##########################################################################*/
 
   /**
-   * @brief Generate a sequence of operations for PMwCAS.
-   *
-   * @param n the number of operations to be executed by each worker.
-   * @param random_seed a seed value for reproducibility.
-   * @return the sequence of operations for PMwCAS.
+   * @param n The number of operations to be executed by each worker.
+   * @param random_seed A seed value for reproducibility.
+   * @return A sequence of operations for PMwCAS.
    */
   auto
   Generate(  //
@@ -97,9 +101,9 @@ class OperationEngine
     for (size_t i = 0; i < n; ++i) {
       // select target addresses for i-th operation
       Operation ops{};
-      for (size_t j = 0; j < kTargetNum; ++j) {
+      for (size_t j = 0; j < target_num_; ++j) {
         auto pos = pos_index_.at(zipf_dist_(rand_engine));
-        while (!ops.SetPositionIfUnique(j, pos)) {
+        while (!ops.SetPositionIfUnique(pos)) {
           // continue until the different target is selected
           pos = pos_index_.at(zipf_dist_(rand_engine));
         }
@@ -113,14 +117,17 @@ class OperationEngine
   }
 
  private:
-  /*####################################################################################
+  /*############################################################################
    * Internal member variables
-   *##################################################################################*/
+   *##########################################################################*/
 
-  /// the index for indicating actual positions in an array.
+  /// @brief The index for indicating actual positions in an array.
   std::vector<size_t> pos_index_{};
 
-  /// a random value generator according to Zipf's law.
+  /// @brief The number of target words for PMwCAS.
+  size_t target_num_{};
+
+  /// @brief A random value generator according to Zipf's law.
   ZipfDist_t zipf_dist_{};
 };
 

@@ -17,42 +17,40 @@
 #ifndef PMWCAS_BENCHMARK_COMMON_HPP
 #define PMWCAS_BENCHMARK_COMMON_HPP
 
+// system headers
+#include <sys/stat.h>
+
 // C++ standard libraries
+#include <atomic>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
 
-/*######################################################################################
+/*##############################################################################
  * Global constants and enums
- *####################################################################################*/
+ *############################################################################*/
 
-/// a file permission for pmemobj_pool.
-#define CREATE_MODE_RW (S_IWUSR | S_IRUSR)
+/// @brief File permission for pmemobj_pool.
+constexpr auto kModeRW = S_IRUSR | S_IWUSR;  // NOLINT
 
-/// @brief The interval of GC threads in micro seconds.
-constexpr size_t kGCInterval = 1E5;
+/// @brief An alias of std::memory_order_relaxed.
+constexpr std::memory_order kMORelax = std::memory_order_relaxed;
 
-/// @brief The number of GC threads.
-constexpr size_t kGCThreadNum = 1;
+/// @brief A flag for removing command line options.
+constexpr bool kRemoveParsedFlags = true;
 
-/// @brief The NULL value for PMEMoid.off.
-constexpr size_t kNullPtr = 0;
-
-/// @brief A flag for reusing pages on persistent memory.
-constexpr bool kReusePageOnPMEM = true;
-
-/*######################################################################################
+/*##############################################################################
  * Global utilities
- *####################################################################################*/
+ *############################################################################*/
 
 /**
- * @param pmem_dir_str the path to persistent memory.
- * @param layout the name of a layout for pmemobj_pool.
- * @return the file path for a given layout.
+ * @param pmem_dir_str The path to a workspace directory on persistent memory.
+ * @param layout A layout name for pmemobj_pool.
+ * @return A file path for a given layout.
  */
-auto
+inline auto
 GetPath(  //
     const std::string &pmem_dir_str,
     const std::string &layout)  //

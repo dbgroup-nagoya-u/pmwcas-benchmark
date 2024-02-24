@@ -23,9 +23,11 @@
 class OperationFixture : public ::testing::Test
 {
  protected:
-  /*####################################################################################
+  static constexpr size_t kTargetNum = 2;
+
+  /*############################################################################
    * Setup/Teardown
-   *##################################################################################*/
+   *##########################################################################*/
 
   void
   SetUp() override
@@ -38,20 +40,21 @@ class OperationFixture : public ::testing::Test
   }
 };
 
-/*--------------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
  * Test definitions
- *------------------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 TEST_F(OperationFixture, SetPositionIfUniqueWithUniquePositionsSucceed)
 {
   Operation ops{};
 
   for (size_t i = 0; i < kTargetNum; ++i) {
-    EXPECT_TRUE(ops.SetPositionIfUnique(i, i));
+    EXPECT_TRUE(ops.SetPositionIfUnique(i));
   }
 
+  const auto& positions = ops.GetPositions();
   for (size_t i = 0; i < kTargetNum; ++i) {
-    EXPECT_EQ(ops.GetPosition(i), i);
+    EXPECT_EQ(positions.at(i), i);
   }
 }
 
@@ -60,8 +63,8 @@ TEST_F(OperationFixture, SetPositionIfUniqueWithDuplicatePositionsFail)
   Operation ops{};
 
   if constexpr (kTargetNum > 1) {
-    ops.SetPositionIfUnique(0, 0);
-    EXPECT_FALSE(ops.SetPositionIfUnique(1, 0));
+    ops.SetPositionIfUnique(0);
+    EXPECT_FALSE(ops.SetPositionIfUnique(0));
   }
 }
 
@@ -71,11 +74,12 @@ TEST_F(OperationFixture, SortTargetsWithUniquePositionsSortInAscendingOrder)
 
   for (int64_t i = kTargetNum - 1; i >= 0; --i) {
     const size_t pos = i;
-    ops.SetPositionIfUnique(pos, pos);
+    ops.SetPositionIfUnique(pos);
   }
   ops.SortTargets();
 
+  const auto& positions = ops.GetPositions();
   for (size_t i = 0; i < kTargetNum; ++i) {
-    EXPECT_EQ(ops.GetPosition(i), i);
+    EXPECT_EQ(positions.at(i), i);
   }
 }

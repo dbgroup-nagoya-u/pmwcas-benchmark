@@ -24,13 +24,15 @@
 // local sources
 #include "common.hpp"
 
-/*######################################################################################
+/*##############################################################################
  * Validators for gflags
- *####################################################################################*/
+ *############################################################################*/
 
 template <class Number>
 static auto
-ValidatePositiveVal(const char *flagname, const Number value)  //
+ValidatePositiveVal(  //
+    const char *flagname,
+    const Number value)  //
     -> bool
 {
   if (value >= 0) return true;
@@ -41,7 +43,9 @@ ValidatePositiveVal(const char *flagname, const Number value)  //
 
 template <class Number>
 static auto
-ValidateNonZero(const char *flagname, const Number value)  //
+ValidateNonZero(  //
+    const char *flagname,
+    const Number value)  //
     -> bool
 {
   if (value != 0) return true;
@@ -51,7 +55,9 @@ ValidateNonZero(const char *flagname, const Number value)  //
 }
 
 static auto
-ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &seed)  //
+ValidateRandomSeed(  //
+    [[maybe_unused]] const char *flagname,
+    const std::string &seed)  //
     -> bool
 {
   if (seed.empty()) return true;

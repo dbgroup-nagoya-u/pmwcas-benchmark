@@ -23,9 +23,13 @@
 class OperationEngineFixture : public ::testing::Test
 {
  protected:
-  /*####################################################################################
+  static constexpr size_t kArrayCapacity = 1E6;
+
+  static constexpr size_t kTargetNum = 2;
+
+  /*############################################################################
    * Setup/Teardown
-   *##################################################################################*/
+   *##########################################################################*/
 
   void
   SetUp() override
@@ -38,9 +42,9 @@ class OperationEngineFixture : public ::testing::Test
   }
 };
 
-/*--------------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
  * Test definitions
- *------------------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 TEST_F(OperationEngineFixture, GenerateCreateSortedTargetPositions)
 {
@@ -48,13 +52,14 @@ TEST_F(OperationEngineFixture, GenerateCreateSortedTargetPositions)
   constexpr auto kRandomSeed = 0;
   constexpr auto kN = 1000;
 
-  OperationEngine ops_engine{kSkewParam, kRandomSeed};
+  OperationEngine ops_engine{kTargetNum, kArrayCapacity, kSkewParam, kRandomSeed};
 
   const auto &operations = ops_engine.Generate(kN, kRandomSeed);
   for (const auto &ops : operations) {
-    auto prev_pos = ops.GetPosition(0);
+    const auto &positions = ops.GetPositions();
+    auto prev_pos = positions.at(0);
     for (size_t i = 1; i < kTargetNum; ++i) {
-      const auto cur_pos = ops.GetPosition(i);
+      const auto cur_pos = positions.at(i);
       EXPECT_LT(prev_pos, cur_pos);
       prev_pos = cur_pos;
     }

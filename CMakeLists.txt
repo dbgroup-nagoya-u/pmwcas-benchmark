@@ -23,14 +23,8 @@ find_package(PkgConfig)
 #------------------------------------------------------------------------------#
 
 set(
-  PMWCAS_BENCH_ELEMENT_NUM 
-  "1000000" CACHE STRING 
-  "The number of elements in a target array."
-)
-
-set(
-  PMWCAS_BENCH_TARGET_NUM 
-  "3" CACHE STRING 
+  PMWCAS_BENCH_MAX_TARGET_NUM 
+  "8" CACHE STRING 
   "The maximum number of target words of PMwCAS."
 )
 
@@ -63,19 +57,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cpp_bench)
 
-set(MEMORY_MANAGER_USE_PERSISTENT_MEMORY "ON" CACHE STRING "" FORCE)
-FetchContent_Declare(
-  memory-manager
-  GIT_REPOSITORY "https://github.com/dbgroup-nagoya-u/memory-manager.git"
-  GIT_TAG "d9664115dcdc026983984b7a0dae3907fbf59d18"
-)
-FetchContent_MakeAvailable(memory-manager)
-
 #------------------------------------------------------------------------------#
 # Configure competitors
 #------------------------------------------------------------------------------#
 
-set(PMWCAS_CAPACITY "${PMWCAS_BENCH_TARGET_NUM}" CACHE STRING "" FORCE)
+set(PMWCAS_CAPACITY "${PMWCAS_BENCH_MAX_TARGET_NUM}" CACHE STRING "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pmwcas")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/microsoft_pmwcas.cmake")
@@ -86,6 +72,9 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/microsoft_pmwcas.cmake")
 
 # define function to add executable files
 function(PMWCAS_BENCH_ADD_EXECUTABLE PMWCAS_BENCH_TARGET)
+  target_sources(${PMWCAS_BENCH_TARGET} PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/array/pmwcas_target.cpp"
+  )
   target_compile_features(${PMWCAS_BENCH_TARGET} PRIVATE
     "cxx_std_17"
   )
@@ -96,12 +85,8 @@ function(PMWCAS_BENCH_ADD_EXECUTABLE PMWCAS_BENCH_TARGET)
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
     $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
   )
-  target_compile_definitions(${PMWCAS_BENCH_TARGET} PRIVATE
-    PMWCAS_BENCH_ELEMENT_NUM=${PMWCAS_BENCH_ELEMENT_NUM}
-    PMWCAS_BENCH_TARGET_NUM=${PMWCAS_BENCH_TARGET_NUM}
-  )
   target_include_directories(${PMWCAS_BENCH_TARGET} PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${LIBPMEM_INCLUDE_DIRS}"
     "${LIBPMEMOBJ_INCLUDE_DIRS}"
   )
@@ -111,7 +96,6 @@ function(PMWCAS_BENCH_ADD_EXECUTABLE PMWCAS_BENCH_TARGET)
     gflags
     dbgroup::cpp_utility
     dbgroup::cpp_bench
-    dbgroup::memory_manager
     dbgroup::pmwcas
     microsoft::pmwcas
   )
@@ -130,7 +114,7 @@ PMWCAS_BENCH_ADD_EXECUTABLE("pmwcas_bench")
 # Build a queue-based benchmark
 #------------------------------------------------------------------------------#
 
-# if(${PMWCAS_BENCH_TARGET_NUM} EQUAL 3)
+# if(${PMWCAS_BENCH_MAX_TARGET_NUM} EQUAL 3)
 #   add_executable(queue_bench
 #     "${CMAKE_CURRENT_SOURCE_DIR}/src/queue_bench.cpp"
 #   )
