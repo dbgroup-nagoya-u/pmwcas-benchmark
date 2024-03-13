@@ -31,21 +31,21 @@ cd pmwcas-benchmark
 #### Parameters for Benchmarking
 
 - `PMWCAS_BENCH_MAX_TARGET_NUM`: The maximum number of target words of PMwCAS (default: `8`).
-- `PMWCAS_USE_DIRTY_FLAG`: Use dirty flags to indicate words that are not persisted (please refer to our [pmwcas](https://github.com/dbgroup-nagoya-u/pmwcas)).
+- `PMEM_ATOMIC_USE_DIRTY_FLAG`: Use dirty flags in PMwCAS to indicate words that are not persisted (please refer to our [pmem-atomic](https://github.com/dbgroup-nagoya-u/pmem-atomic)) repository.
 - `DBGROUP_MAX_THREAD_NUM`: The maximum number of worker threads (please refer to [cpp-utility](https://github.com/dbgroup-nagoya-u/cpp-utility)).
 
 #### Parameters for Unit Testing
 
 - `PMWCAS_BENCH_BUILD_TESTS`: build unit tests for this repository if `ON` (default: `OFF`).
-- `DBGROUP_TEST_THREAD_NUM`: The number of worker threads for testing (default: `8`).
+- `DBGROUP_TEST_THREAD_NUM`: The number of worker threads for testing (default: `0`).
 - `DBGROUP_TEST_TMP_PMEM_PATH`: The path to a durable storage (default: `""`).
 
 ### Build and Run Unit Tests
 
 ```bash
 mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DPMWCAS_BENCH_BUILD_TESTS=ON ..
-make -j
+cmake .. -DCMAKE_BUILD_TYPE=Release -DPMWCAS_BENCH_BUILD_TESTS=ON
+cmake --build . --parallel --config Release
 ctest -C Release
 ```
 
