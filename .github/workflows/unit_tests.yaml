@@ -1,25 +1,32 @@
-name: Ubuntu-20.04
+name: Unit Tests
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+    secrets:
+      app_id:
+        required: true
+      ssh_key:
+        required: true
 
 env:
   BUILD_TYPE: Release
 
 jobs:
   unit_test:
-    runs-on: ubuntu-20.04
-    steps:
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: 10
 
+    steps:
     - name: Create token
       uses: actions/create-github-app-token@v1
       id: app_token
       with:
-        app-id: ${{ secrets.TOKEN_CREATOR_ID }}
-        private-key: ${{ secrets.TOKEN_CREATOR_SSH_KEY }}
+        app-id: ${{ secrets.app_id }}
+        private-key: ${{ secrets.ssh_key }}
         owner: ${{ github.repository_owner }}
 
     - name: Clone Main Repository
