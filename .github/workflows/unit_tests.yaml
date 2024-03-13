@@ -8,18 +8,25 @@ on:
 
 env:
   BUILD_TYPE: Release
-  THREAD_NUM: 2
 
 jobs:
   unit_test:
     runs-on: ubuntu-20.04
     steps:
 
-    - name: Clone Main Repository
-      uses: actions/checkout@v2
+    - name: Create token
+      uses: actions/create-github-app-token@v1
+      id: app_token
       with:
-        submodules: recursive
-        ssh-key: ${{secrets.SSH_KEY_FOR_ACTIONS}}
+        app-id: ${{ secrets.TOKEN_CREATOR_ID }}
+        private-key: ${{ secrets.TOKEN_CREATOR_SSH_KEY }}
+        owner: ${{ github.repository_owner }}
+
+    - name: Clone Main Repository
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+        token: ${{ steps.app_token.outputs.token }}
         persist-credentials: false
 
     - name: Create Build Environment
@@ -39,9 +46,9 @@ jobs:
     - name: Build
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake --build . --parallel ${THREAD_NUM} --config ${BUILD_TYPE}
+      run: cmake --build . --parallel --config ${BUILD_TYPE}
 
     - name: Test
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: ctest -C ${BUILD_TYPE} --rerun-failed --output-on-failure
+      run: ctest -C ${BUILD_TYPE} --output-on-failure
