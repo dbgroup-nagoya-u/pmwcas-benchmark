@@ -6,7 +6,7 @@ include(FetchContent)
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY "https://github.com/google/googletest.git"
-  GIT_TAG "58d77fa8070e8cec2dc1ed015d66b454c8d78850" # v1.12.1
+  GIT_TAG "f8d7d77c06936315286eb55f8de22cd23c188571" # v1.14.0
 )
 FetchContent_MakeAvailable(googletest)
 
@@ -34,6 +34,7 @@ set(
 function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
   add_executable(${DBGROUP_TEST_TARGET}
     "${CMAKE_CURRENT_SOURCE_DIR}/${DBGROUP_TEST_TARGET}.cpp"
+    "${PROJECT_SOURCE_DIR}/src/pmwcas_target.cpp"
   )
   target_compile_features(${DBGROUP_TEST_TARGET} PRIVATE
     "cxx_std_17"
@@ -59,7 +60,7 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
     ${LIBPMEM_LIBRARIES}
     ${LIBPMEMOBJ_LIBRARIES}
     dbgroup::cpp_utility
-    dbgroup::pmwcas
+    dbgroup::pmem_atomic
     microsoft::pmwcas
     GTest::gtest_main
   )
@@ -67,4 +68,7 @@ function(DBGROUP_ADD_TEST DBGROUP_TEST_TARGET)
   add_test(NAME ${DBGROUP_TEST_TARGET} COMMAND $<TARGET_FILE:${DBGROUP_TEST_TARGET}>)
 endfunction()
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/array")
+# add unit tests to build targets
+DBGROUP_ADD_TEST("operation_test")
+DBGROUP_ADD_TEST("operation_engine_test")
+DBGROUP_ADD_TEST("pmwcas_target_test")

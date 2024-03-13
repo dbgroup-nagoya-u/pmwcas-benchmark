@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-// a corresponding header of this file
-#include "array/operation.hpp"
+// the corresponding header
+#include "operation.hpp"
 
-// external sources
+// C++ standard libraries
+#include <cstddef>
+#include <cstdint>
+
+// external libraries
 #include "gtest/gtest.h"
 
 class OperationFixture : public ::testing::Test
 {
  protected:
+  /*############################################################################
+   * Constants
+   *##########################################################################*/
+
   static constexpr size_t kTargetNum = 2;
 
   /*############################################################################

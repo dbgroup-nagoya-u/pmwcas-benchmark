@@ -50,7 +50,7 @@ class Operation
   /**
    * @return The target positions in an array.
    */
-  auto
+  constexpr auto
   GetPositions() const  //
       -> const std::vector<size_t> &
   {

@@ -24,11 +24,11 @@
 #include <utility>
 #include <vector>
 
-// external sources
+// external libraries
 #include "random/zipf.hpp"
 
 // local sources
-#include "array/operation.hpp"
+#include "operation.hpp"
 
 class OperationEngine
 {
@@ -102,10 +102,10 @@ class OperationEngine
       // select target addresses for i-th operation
       Operation ops{};
       for (size_t j = 0; j < target_num_; ++j) {
-        auto pos = pos_index_.at(zipf_dist_(rand_engine));
+        auto pos = zipf_dist_(rand_engine);
         while (!ops.SetPositionIfUnique(pos)) {
           // continue until the different target is selected
-          pos = pos_index_.at(zipf_dist_(rand_engine));
+          pos = zipf_dist_(rand_engine);
         }
       }
       ops.SortTargets();

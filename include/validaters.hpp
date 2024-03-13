@@ -19,10 +19,8 @@
 
 // C++ standard libraries
 #include <iostream>
+#include <stdexcept>
 #include <string>
-
-// local sources
-#include "common.hpp"
 
 /*##############################################################################
  * Validators for gflags
@@ -37,7 +35,7 @@ ValidatePositiveVal(  //
 {
   if (value >= 0) return true;
 
-  std::cerr << "A value must be positive for " << flagname << std::endl;
+  std::cerr << "A value must be positive for " << flagname << "\n";
   return false;
 }
 
@@ -50,8 +48,26 @@ ValidateNonZero(  //
 {
   if (value != 0) return true;
 
-  std::cerr << "A value must be not zero for " << flagname << std::endl;
+  std::cerr << "A value must be not zero for " << flagname << "\n";
   return false;
+}
+
+template <class UInt>
+static auto
+ValidateBlockSize(  //
+    const char *flagname,
+    const UInt value)  //
+    -> bool
+{
+  if (value < 8) {
+    std::cerr << "A value is too small: " << flagname << "\n";
+    return false;
+  }
+  if (value & (value - 1)) {
+    std::cerr << "A value must be the exponential in two: " << flagname << "\n";
+    return false;
+  }
+  return true;
 }
 
 static auto
@@ -65,7 +81,7 @@ ValidateRandomSeed(  //
   try {
     std::stoul(seed);
   } catch (const std::invalid_argument &) {
-    std::cerr << "A random seed must be unsigned integers" << std::endl;
+    std::cerr << "A random seed must be unsigned integers\n";
     return false;
   }
   return true;

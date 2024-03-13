@@ -23,8 +23,8 @@ find_package(PkgConfig)
 #------------------------------------------------------------------------------#
 
 set(
-  PMWCAS_BENCH_MAX_TARGET_NUM 
-  "8" CACHE STRING 
+  PMWCAS_BENCH_MAX_TARGET_NUM
+  "8" CACHE STRING
   "The maximum number of target words of PMwCAS."
 )
 
@@ -46,7 +46,7 @@ pkg_check_modules(LIBPMEMOBJ REQUIRED libpmemobj)
 FetchContent_Declare(
   cpp_utility
   GIT_REPOSITORY https://github.com/dbgroup-nagoya-u/cpp-utility.git
-  GIT_TAG "c37418e13d8e258b9b76470a4958a974da37c093"
+  GIT_TAG "4a23e598ae5ede15b9c03c860ac156f19ba8112a"
 )
 FetchContent_MakeAvailable(cpp_utility)
 
@@ -61,65 +61,43 @@ FetchContent_MakeAvailable(cpp_bench)
 # Configure competitors
 #------------------------------------------------------------------------------#
 
-set(PMWCAS_CAPACITY "${PMWCAS_BENCH_MAX_TARGET_NUM}" CACHE STRING "" FORCE)
+set(PMEM_ATOMIC_PMWCAS_CAPACITY "${PMWCAS_BENCH_MAX_TARGET_NUM}" CACHE STRING "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pmwcas")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/microsoft_pmwcas.cmake")
 
 #------------------------------------------------------------------------------#
-# Utility function for setting compile definitions
+# Build targets
 #------------------------------------------------------------------------------#
 
-# define function to add executable files
-function(PMWCAS_BENCH_ADD_EXECUTABLE PMWCAS_BENCH_TARGET)
-  target_sources(${PMWCAS_BENCH_TARGET} PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/array/pmwcas_target.cpp"
-  )
-  target_compile_features(${PMWCAS_BENCH_TARGET} PRIVATE
-    "cxx_std_17"
-  )
-  target_compile_options(${PMWCAS_BENCH_TARGET} PRIVATE
-    -Wall
-    -Wextra
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
-    $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
-  )
-  target_include_directories(${PMWCAS_BENCH_TARGET} PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${LIBPMEM_INCLUDE_DIRS}"
-    "${LIBPMEMOBJ_INCLUDE_DIRS}"
-  )
-  target_link_libraries(${PMWCAS_BENCH_TARGET} PRIVATE
-    ${LIBPMEM_LIBRARIES}
-    ${LIBPMEMOBJ_LIBRARIES}
-    gflags
-    dbgroup::cpp_utility
-    dbgroup::cpp_bench
-    dbgroup::pmwcas
-    microsoft::pmwcas
-  )
-endfunction()
-
-#------------------------------------------------------------------------------#
-# Build an array-based benchmark
-#------------------------------------------------------------------------------#
-
-add_executable(pmwcas_bench
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/pmwcas_bench.cpp"
+add_executable(${PROJECT_NAME}
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/${PROJECT_NAME}.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/pmwcas_target.cpp"
 )
-PMWCAS_BENCH_ADD_EXECUTABLE("pmwcas_bench")
-
-#------------------------------------------------------------------------------#
-# Build a queue-based benchmark
-#------------------------------------------------------------------------------#
-
-# if(${PMWCAS_BENCH_MAX_TARGET_NUM} EQUAL 3)
-#   add_executable(queue_bench
-#     "${CMAKE_CURRENT_SOURCE_DIR}/src/queue_bench.cpp"
-#   )
-#   PMWCAS_BENCH_ADD_EXECUTABLE("queue_bench")
-# endif()
+target_compile_features(${PROJECT_NAME} PRIVATE
+  "cxx_std_17"
+)
+target_compile_options(${PROJECT_NAME} PRIVATE
+  -Wall
+  -Wextra
+  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Release">:"-O2 -march=native">
+  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"RelWithDebInfo">:"-g3 -Og -pg">
+  $<$<STREQUAL:${CMAKE_BUILD_TYPE},"Debug">:"-g3 -O0 -pg">
+)
+target_include_directories(${PROJECT_NAME} PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${LIBPMEM_INCLUDE_DIRS}"
+  "${LIBPMEMOBJ_INCLUDE_DIRS}"
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  ${LIBPMEM_LIBRARIES}
+  ${LIBPMEMOBJ_LIBRARIES}
+  gflags
+  dbgroup::cpp_utility
+  dbgroup::cpp_bench
+  dbgroup::pmem_atomic
+  microsoft::pmwcas
+)
 
 #------------------------------------------------------------------------------#
 # Build unit tests

@@ -17,33 +17,26 @@
 #ifndef PMWCAS_BENCHMARK_COMMON_HPP
 #define PMWCAS_BENCHMARK_COMMON_HPP
 
-// system headers
-#include <sys/stat.h>
-
 // C++ standard libraries
-#include <atomic>
-#include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <filesystem>
 #include <string>
 
 /*##############################################################################
- * Global constants and enums
- *############################################################################*/
-
-/// @brief File permission for pmemobj_pool.
-constexpr auto kModeRW = S_IRUSR | S_IWUSR;  // NOLINT
-
-/// @brief An alias of std::memory_order_relaxed.
-constexpr std::memory_order kMORelax = std::memory_order_relaxed;
-
-/// @brief A flag for removing command line options.
-constexpr bool kRemoveParsedFlags = true;
-
-/*##############################################################################
  * Global utilities
  *############################################################################*/
+
+/**
+ * @param val a target value.
+ * @return the binary logarithm of given value.
+ */
+constexpr auto
+Log2(                  //
+    const size_t val)  //
+    -> size_t
+{
+  return (val == 0 || val == 1) ? 0 : Log2(val >> 1UL) + 1;
+}
 
 /**
  * @param pmem_dir_str The path to a workspace directory on persistent memory.

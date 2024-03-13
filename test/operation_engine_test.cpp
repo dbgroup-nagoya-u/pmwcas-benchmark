@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-// a corresponding header of this file
-#include "array/operation_engine.hpp"
+// the corresponding header
+#include "operation_engine.hpp"
 
-// external sources
+// C++ standard libraries
+#include <cstddef>
+
+// external libraries
 #include "gtest/gtest.h"
 
 class OperationEngineFixture : public ::testing::Test
 {
  protected:
+  /*############################################################################
+   * Constants
+   *##########################################################################*/
+
   static constexpr size_t kArrayCapacity = 1E6;
 
   static constexpr size_t kTargetNum = 2;

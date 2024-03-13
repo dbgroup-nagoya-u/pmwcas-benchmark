@@ -15,18 +15,21 @@
  */
 
 // C++ standard libraries
+#include <cstddef>
+#include <iostream>
 #include <random>
 #include <string>
 
 // external system libraries
 #include <gflags/gflags.h>
 
-// external sources
+// external libraries
 #include "benchmark/benchmarker.hpp"
 
 // local sources
-#include "array/operation_engine.hpp"
-#include "array/pmwcas_target.hpp"
+#include "competitor.hpp"
+#include "operation_engine.hpp"
+#include "pmwcas_target.hpp"
 #include "validaters.hpp"
 
 /*##############################################################################
@@ -54,6 +57,9 @@ DEFINE_validator(skew_parameter, &ValidatePositiveVal);
 
 DEFINE_uint64(arr_cap, 1000000, "The capacity of an array for PMwCAS targets.");
 DEFINE_validator(arr_cap, &ValidateNonZero);
+
+DEFINE_uint64(block_size, 256, "The size of each memory block.");
+DEFINE_validator(block_size, &ValidateBlockSize);
 
 /*##############################################################################
  * Utility options
@@ -89,14 +95,15 @@ Run(  //
 {
   using Target_t = PMwCASTarget<Implementation>;
   using Bench_t = ::dbgroup::benchmark::Benchmarker<Target_t, Operation, OperationEngine>;
+  constexpr auto kPercentile = "0.01,0.05,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.95,0.99";
 
   const auto random_seed = (FLAGS_seed.empty()) ? std::random_device{}()  //
                                                 : std::stoul(FLAGS_seed);
-  Target_t target{pmem_dir_str, FLAGS_arr_cap};
+  Target_t target{pmem_dir_str, FLAGS_arr_cap, FLAGS_block_size};
   OperationEngine ops_engine{target_num, FLAGS_arr_cap, FLAGS_skew_parameter, random_seed};
 
   Bench_t bench{target,      target_name,      ops_engine, FLAGS_num_exec, FLAGS_num_thread,
-                random_seed, FLAGS_throughput, FLAGS_csv,  FLAGS_timeout};
+                random_seed, FLAGS_throughput, FLAGS_csv,  FLAGS_timeout,  kPercentile};
   bench.Run();
 }
 
@@ -111,12 +118,13 @@ main(  //
     -> int
 {
   // parse command line options
+  constexpr bool kRemoveParsedFlags = true;
   gflags::SetUsageMessage("measures throughput/latency of PMwCAS implementations.");
   gflags::ParseCommandLineFlags(&argc, &argv, kRemoveParsedFlags);
 
   // parse command line arguments
   if (argc < 3) {
-    std::cerr << "Specify a path to be stored a persistent array." << std::endl;
+    std::cerr << "Specify a path to be stored a persistent array.\n";
     return 0;
   }
   const std::string pmem_dir_str{argv[1]};

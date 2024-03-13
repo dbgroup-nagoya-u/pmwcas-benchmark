@@ -10,8 +10,10 @@ BENCH_BIN=""
 CONFIG_ENV=""
 PMEM_DIR=""
 NUMA_NODES=""
-WORKSPACE_DIR=$(cd $(dirname ${BASH_SOURCE:-${0}})/.. && pwd)
 MEASURE_THROUGHPUT="t"
+readonly WORKSPACE_DIR=$(cd $(dirname ${BASH_SOURCE:-${0}})/.. && pwd)
+readonly RANDOM_ID=$(cat /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 10)
+readonly TMP_PATH="/tmp/pmwcas_benchmark-$(id -un)-${RANDOM_ID}"
 
 usage() {
   cat 1>&2 << EOS
@@ -36,10 +38,12 @@ EOS
 # Parse options
 ########################################################################################
 
-while getopts n:lh OPT
+while getopts n:lht OPT
 do
   case ${OPT} in
     n) NUMA_NODES=${OPTARG}
+      ;;
+    t) MEASURE_THROUGHPUT="t"
       ;;
     l) MEASURE_THROUGHPUT="f"
       ;;
@@ -87,26 +91,38 @@ fi
 source "${CONFIG_ENV}"
 
 for IMPL in ${IMPL_CANDIDATES}; do
-  for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
-    for TARGET_NUM in ${TARGET_CANDIDATES}; do
-      for THREAD_NUM in ${THREAD_CANDIDATES}; do
-        for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
-          echo -n "${IMPL},${TARGET_NUM},${SKEW_PARAMETER},${THREAD_NUM},"
-          while : ; do
-            timeout "30s" \
-              ${BENCH_BIN} \
-              --${IMPL} \
-              --csv \
-              --throughput=${MEASURE_THROUGHPUT} \
-              --num_exec ${OPERATION_COUNT} \
-              --num_thread ${THREAD_NUM} \
-              --skew_parameter ${SKEW_PARAMETER} \
-              --arr-cap ${ARRAY_CAPACITY} \
-              ${PMEM_DIR} \
-              ${TARGET_NUM}
-            if [ ${?} -eq 0 ]; then
-              break
-            fi
+  for BLOCK_SIZE in ${BLOCK_SIZE_CANDIDATES}; do
+    for SKEW_PARAMETER in ${SKEW_CANDIDATES}; do
+      for TARGET_NUM in ${TARGET_CANDIDATES}; do
+        if [ "${IMPL}" = "pcas" -a "${TARGET_NUM}" -ne "1" ]; then
+          continue
+        fi
+        for THREAD_NUM in ${THREAD_CANDIDATES}; do
+          for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
+            TMP_OUTPUT="${TMP_PATH}-output-$(date +%Y%m%d-%H%m%S-%N).csv"
+            while : ; do
+              timeout "90s" \
+                ${BENCH_BIN} \
+                --${IMPL} \
+                --csv \
+                --throughput=${MEASURE_THROUGHPUT} \
+                --num_exec ${OPERATION_COUNT} \
+                --num_thread ${THREAD_NUM} \
+                --skew_parameter ${SKEW_PARAMETER} \
+                --arr-cap ${ARRAY_CAPACITY} \
+                --block-size ${BLOCK_SIZE} \
+                --timeout ${TIMEOUT} \
+                ${PMEM_DIR} \
+                ${TARGET_NUM} \
+                >> "${TMP_OUTPUT}"
+              if [ ${?} -eq 0 ]; then
+                break
+              fi
+            done
+            sed \
+              "s/^/${IMPL},${BLOCK_SIZE},${TARGET_NUM},${SKEW_PARAMETER},${THREAD_NUM},/g" \
+              "${TMP_OUTPUT}"
+            rm -f "${TMP_OUTPUT}"
           done
         done
       done

@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-// a corresponding header of this file
-#include "array/pmwcas_target.hpp"
+// the corresponding header
+#include "pmwcas_target.hpp"
 
 // C++ standard libraries
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <functional>
+#include <cstddef>
+#include <filesystem>
+#include <iostream>
 #include <memory>
 #include <mutex>
-#include <random>
 #include <string>
 #include <thread>
 #include <type_traits>
 #include <vector>
 
-// external sources
+// external libraries
 #include "gtest/gtest.h"
+
+// library headers
+#include "competitor.hpp"
 
 // macros for modifying input strings
 #define DBGROUP_ADD_QUOTES_INNER(x) #x                     // NOLINT
@@ -41,6 +46,8 @@
  *############################################################################*/
 
 constexpr size_t kArrayCapacity = PMWCAS_BENCH_MAX_TARGET_NUM;
+
+constexpr size_t kBlockSize = 256;
 
 constexpr size_t kTestThreadNum = DBGROUP_TEST_THREAD_NUM;
 
@@ -89,7 +96,7 @@ class PMwCASTargetFixture : public ::testing::Test
   {
     std::filesystem::path pool_path{kTmpPMEMPath};
     pool_path /= use_name;
-    target_ = std::make_unique<PMwCASTarget_t>(pool_path, kArrayCapacity);
+    target_ = std::make_unique<PMwCASTarget_t>(pool_path, kArrayCapacity, kBlockSize);
 
     ready_num_ = 0;
     ready_for_testing_ = false;

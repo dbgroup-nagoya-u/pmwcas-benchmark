@@ -18,20 +18,17 @@
 #define PMWCAS_BENCHMARK_ARRAY_PMWCAS_TARGET_HPP
 
 // C++ standard libraries
-#include <filesystem>
-#include <iostream>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
-#include <vector>
 
 // external system libraries
-#include <libpmem.h>
 #include <libpmemobj.h>
 
 // local sources
-#include "array/operation.hpp"
 #include "common.hpp"
-#include "competitor.hpp"
+#include "operation.hpp"
 
 /**
  * @brief A class to deal with MwCAS target data and algorthms.
@@ -51,10 +48,12 @@ class PMwCASTarget
    *
    * @param pmem_dir_str A path to persistent memory for benchmarking.
    * @param array_cap The capacity of an array.
+   * @param block_size The size of each memory block.
    */
   PMwCASTarget(  //
       const std::string &pmem_dir_str,
-      const size_t array_cap);
+      const size_t array_cap,
+      const size_t block_size);
 
   PMwCASTarget(const PMwCASTarget &) = delete;
   PMwCASTarget(PMwCASTarget &&) = delete;
@@ -70,15 +69,7 @@ class PMwCASTarget
    * @brief Destroy the PMwCASTarget object.
    *
    */
-  ~PMwCASTarget()
-  {
-    pmwcas_desc_pool_ = nullptr;
-    microsoft_pmwcas_desc_pool_ = nullptr;
-    if (pop_ != nullptr) {
-      pmemobj_close(pop_);
-    }
-    std::filesystem::remove_all(pmem_dir_str_);
-  }
+  ~PMwCASTarget();
 
   /*############################################################################
    * Setup/Teardown for workers
@@ -104,14 +95,9 @@ class PMwCASTarget
    * @param pos The position in an array.
    * @return The current value.
    */
-  auto
-  GetValue(                    //
+  auto GetValue(               //
       const size_t pos) const  //
-      -> uint64_t
-  {
-    const auto *addr = reinterpret_cast<const std::atomic_uint64_t *>(&arr_[pos]);
-    return addr->load(kMORelax);
-  }
+      -> uint64_t;
 
   /**
    * @brief Perform a PMwCAS operation.
@@ -125,24 +111,16 @@ class PMwCASTarget
 
  private:
   /*############################################################################
-   * Internal constants
-   *##########################################################################*/
-
-  /// @brief A layout name for the pool of PMwCAS descriptors.
-  static constexpr char kTmpPath[] = "pmwcas_bench";
-
-  /// @brief A layout name for the pool of PMwCAS descriptors.
-  static constexpr char kPMwCASLayout[] = "pmwcas";
-
-  /// @brief A layout name for the pool of PMwCAS descriptors.
-  static constexpr char kMicrosoftPMwCASLayout[] = "microsoft_pmwcas";
-
-  /// @brief A layout name for benchmarking with arrays.
-  static constexpr char kArrayLayout[] = "array";
-
-  /*############################################################################
    * Internal utilities
    *##########################################################################*/
+
+  /**
+   * @param pos The position in memory blocks.
+   * @return A target address.
+   */
+  auto GetAddr(          //
+      const size_t pos)  //
+      -> uint64_t *;
 
   /**
    * @brief Create an array on persistent memory.
@@ -150,26 +128,9 @@ class PMwCASTarget
    * @param pmem_dir_str A path to persistent memory for benchmarking.
    * @param array_cap The capacity of an array.
    */
-  void
-  Initialize(  //
+  void Initialize(  //
       const std::string &pmem_dir_str,
-      const size_t array_cap)
-  {
-    // reset a target directory
-    pmem_dir_str_ = GetPath(pmem_dir_str, kTmpPath);
-    std::filesystem::remove_all(pmem_dir_str_);
-    std::filesystem::create_directories(pmem_dir_str_);
-
-    // create a pool for persistent memory
-    const size_t array_size = sizeof(uint64_t) * array_cap;
-    const size_t pool_size = array_size + PMEMOBJ_MIN_POOL;
-    const auto &path = GetPath(pmem_dir_str_, kArrayLayout);
-    pop_ = pmemobj_create(path.c_str(), kArrayLayout, pool_size, kModeRW);
-    if (pop_ == nullptr) throw std::runtime_error{pmemobj_errormsg()};
-
-    const auto &root = pmemobj_root(pop_, array_size);
-    arr_ = reinterpret_cast<uint64_t *>(pmemobj_direct(root));
-  }
+      const size_t array_cap);
 
   /*############################################################################
    * Internal member variables
@@ -181,14 +142,17 @@ class PMwCASTarget
   /// @brief The pool for persistent memory.
   PMEMobjpool *pop_{nullptr};
 
+  /// @brief The size of each block.
+  size_t block_size_{256};
+
+  /// @brief The size of the left-shift insruction instead of multiplication.
+  size_t shift_num_{Log2(block_size_)};
+
   /// @brief An array on persistent memory.
-  uint64_t *arr_{nullptr};
+  std::byte *root_addr_{nullptr};
 
-  /// @brief A pool of our PMwCAS descriptors.
-  std::unique_ptr<PMwCAS> pmwcas_desc_pool_{nullptr};
-
-  /// @brief A pool of microsoft/pmwcas descriptors.
-  std::unique_ptr<MicrosoftPMwCAS> microsoft_pmwcas_desc_pool_{nullptr};
+  /// @brief A pool of PMwCAS descriptors.
+  std::unique_ptr<Implementation> desc_pool_{nullptr};
 };
 
 #endif  // PMWCAS_BENCHMARK_ARRAY_PMWCAS_TARGET_HPP

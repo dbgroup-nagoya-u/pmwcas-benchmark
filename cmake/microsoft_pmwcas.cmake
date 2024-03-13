@@ -39,7 +39,7 @@ target_include_directories(microsoft_pmwcas PUBLIC
   "${microsoft_pmwcas_SOURCE_DIR}/src"
   "${microsoft_pmwcas_SOURCE_DIR}/include"
 )
-target_include_directories(microsoft_pmwcas PRIVATE
+target_include_directories(microsoft_pmwcas PUBLIC
   "${LIBPMEMOBJ_INCLUDE_DIRS}"
 )
 target_compile_definitions(microsoft_pmwcas PUBLIC
@@ -47,7 +47,7 @@ target_compile_definitions(microsoft_pmwcas PUBLIC
   PMEM
   PMDK
 )
-target_link_libraries(microsoft_pmwcas PRIVATE
+target_link_libraries(microsoft_pmwcas PUBLIC
   Threads::Threads
   rt
   numa

@@ -18,23 +18,22 @@
 #define PMWCAS_BENCHMARK_COMPETITOR_HPP
 
 // our PMwCAS
-#include "pmwcas/descriptor_pool.hpp"
+#include "pmem/atomic/descriptor_pool.hpp"
 
 // microsoft/pmwcas
 #include "mwcas/mwcas.h"
-#include "pmwcas.h"
 
 /*##############################################################################
  * Type aliases for competitors
  *############################################################################*/
 
 /// @brief An alias for our PMwCAS.
-using PMwCAS = ::dbgroup::atomic::pmwcas::DescriptorPool;
+using PMwCAS = ::dbgroup::pmem::atomic::DescriptorPool;
 
 /// @brief An alias for microsoft/pmwcas.
 using MicrosoftPMwCAS = ::pmwcas::DescriptorPool;
 
-/// @brief An alias for software PCAS.
-using PCAS = void;
+/// @brief A dummy alias for software PCAS.
+using PCAS = char;
 
 #endif  // PMWCAS_BENCHMARK_COMPETITOR_HPP
