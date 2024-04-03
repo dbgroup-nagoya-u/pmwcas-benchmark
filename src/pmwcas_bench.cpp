@@ -16,6 +16,7 @@
 
 // C++ standard libraries
 #include <cstddef>
+#include <filesystem>
 #include <iostream>
 #include <random>
 #include <string>
@@ -124,11 +125,20 @@ main(  //
 
   // parse command line arguments
   if (argc < 3) {
-    std::cerr << "Specify a path to be stored a persistent array.\n";
-    return 0;
+    std::cerr << "Usage: ./pmwcas_bench --<competitor> <path_to_pmem_dir> <target_word_num>\n";
+    return 1;
   }
   const std::string pmem_dir_str{argv[1]};
+  if (!std::filesystem::exists(pmem_dir_str) || !std::filesystem::is_directory(pmem_dir_str)) {
+    std::cerr << "[Error] The given path does not specify a directory.\n";
+    return 1;
+  }
   const auto target_num = std::stoull(argv[2]);
+  constexpr auto kMax = ::dbgroup::pmem::atomic::kPMwCASCapacity;
+  if (target_num > kMax) {
+    std::cerr << "[Error] The current benchmark can swap up to " << kMax << " words.\n";
+    return 1;
+  }
 
   // run benchmark for each implementaton
   if (FLAGS_pmwcas) {

@@ -67,6 +67,7 @@
     "ctest",
     "DBUILD",
     "DCMAKE",
+    "DDBGROUP",
     "DMWCAS",
     "DPMWCAS",
     "gflags",
