@@ -8,7 +8,7 @@ endif()
 # project information
 project(
   pmwcas_bench
-  VERSION "0.1.0"
+  VERSION "1.0.0"
   DESCRIPTION "A benchmark program for PMwCAS implementations."
   LANGUAGES "CXX"
 )
