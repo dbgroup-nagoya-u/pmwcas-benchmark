@@ -2,15 +2,16 @@
 
 set -u
 
-########################################################################################
+################################################################################
 # Documents
-########################################################################################
+################################################################################
 
 BENCH_BIN=""
 CONFIG_ENV=""
 PMEM_DIR=""
 NUMA_NODES=""
 MEASURE_THROUGHPUT="t"
+TIMEOUT_PER_EXEC="90s"
 readonly WORKSPACE_DIR=$(cd $(dirname ${BASH_SOURCE:-${0}})/.. && pwd)
 readonly RANDOM_ID=$(cat /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 10)
 readonly TMP_PATH="/tmp/pmwcas_benchmark-$(id -un)-${RANDOM_ID}"
@@ -20,8 +21,8 @@ usage() {
 Usage:
   ${BASH_SOURCE:-${0}} <bench_bin> <config> <pmem_dir> 1> results.csv 2> error.log
 Description:
-  Run benchmark to measure throughput. All the benchmark results are output in CSV
-  format.
+  Run benchmark to measure throughput/latency. All the benchmark results are
+  output in CSV format.
 Arguments:
   <bench_bin>: A path to a binary file for benchmarking.
   <config>: A path to a configuration file for benchmarking.
@@ -29,16 +30,19 @@ Arguments:
 Options:
   -h: Show this messsage and exit.
   -n: Only execute benchmark on the CPUs of nodes. See "man numactl" for details.
+  -t: Use throughput as a criteria (default: true).
   -l: Use latency as a criteria (default: false).
+  -T: Set a timeout per execution (default: 90s). We provide this option to
+      avoid some infinite loops in the "microsoft/pmwcas" implementation.
 EOS
   exit 1
 }
 
-########################################################################################
+################################################################################
 # Parse options
-########################################################################################
+################################################################################
 
-while getopts n:lht OPT
+while getopts n:lhtT: OPT
 do
   case ${OPT} in
     n) NUMA_NODES=${OPTARG}
@@ -46,6 +50,8 @@ do
     t) MEASURE_THROUGHPUT="t"
       ;;
     l) MEASURE_THROUGHPUT="f"
+      ;;
+    T) TIMEOUT_PER_EXEC=${OPTARG}
       ;;
     h) usage
       ;;
@@ -55,9 +61,9 @@ do
 done
 shift $((${OPTIND} - 1))
 
-########################################################################################
+################################################################################
 # Parse arguments
-########################################################################################
+################################################################################
 
 if [ ${#} != 3 ]; then
   usage
@@ -84,9 +90,9 @@ if [ -n "${NUMA_NODES}" ]; then
   BENCH_BIN="numactl -N ${NUMA_NODES} -m ${NUMA_NODES} ${BENCH_BIN}"
 fi
 
-########################################################################################
+################################################################################
 # Run benchmark
-########################################################################################
+################################################################################
 
 source "${CONFIG_ENV}"
 
@@ -101,7 +107,7 @@ for IMPL in ${IMPL_CANDIDATES}; do
           for LOOP in `seq ${BENCH_REPEAT_COUNT}`; do
             TMP_OUTPUT="${TMP_PATH}-output-$(date +%Y%m%d-%H%m%S-%N).csv"
             while : ; do
-              timeout "90s" \
+              timeout "${TIMEOUT_PER_EXEC}" \
                 ${BENCH_BIN} \
                 --${IMPL} \
                 --csv \

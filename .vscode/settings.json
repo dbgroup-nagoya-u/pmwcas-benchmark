@@ -92,6 +92,7 @@
     "pthread",
     "stoi",
     "stoul",
+    "urandom",
     "Wextra",
     "zipf"
   ],
