@@ -73,4 +73,4 @@ For example, the following command performs P3wCAS benchmark with our PMwCAS imp
 ./build/pmwcas_bench --pmwcas /pmem_tmp/ 3
 ```
 
-We prepare scripts in `bin` directory to measure performance with a variety of parameters. You can set parameters for benchmarking by `config/bench.env`.
+We prepare scripts in `bin` directory to measure performance with a variety of parameters.
