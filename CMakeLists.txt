@@ -61,8 +61,12 @@ FetchContent_MakeAvailable(cpp_bench)
 # Configure competitors
 #------------------------------------------------------------------------------#
 
-set(PMEM_ATOMIC_PMWCAS_CAPACITY "${PMWCAS_BENCH_MAX_TARGET_NUM}" CACHE STRING "" FORCE)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pmwcas")
+FetchContent_Declare(
+  pmem_atomic
+  GIT_REPOSITORY https://github.com/dbgroup-nagoya-u/pmem-atomic.git
+  GIT_TAG "75203c5ad7cf1f4c678fd25811caf3991b2a13b4"
+)
+FetchContent_MakeAvailable(pmem_atomic)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/microsoft_pmwcas.cmake")
 

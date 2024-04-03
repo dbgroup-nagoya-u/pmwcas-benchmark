@@ -1,3 +1,0 @@
-[submodule "external/pmwcas"]
-	path = external/pmwcas
-	url = git@github.com:dbgroup-nagoya-u/pmwcas.git
