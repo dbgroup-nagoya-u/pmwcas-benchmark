@@ -19,39 +19,61 @@
 
 // C++ standard libraries
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
-// local sources
-#include "common.hpp"
-
-/*######################################################################################
+/*##############################################################################
  * Validators for gflags
- *####################################################################################*/
+ *############################################################################*/
 
 template <class Number>
 static auto
-ValidatePositiveVal(const char *flagname, const Number value)  //
+ValidatePositiveVal(  //
+    const char *flagname,
+    const Number value)  //
     -> bool
 {
   if (value >= 0) return true;
 
-  std::cerr << "A value must be positive for " << flagname << std::endl;
+  std::cerr << "A value must be positive for " << flagname << "\n";
   return false;
 }
 
 template <class Number>
 static auto
-ValidateNonZero(const char *flagname, const Number value)  //
+ValidateNonZero(  //
+    const char *flagname,
+    const Number value)  //
     -> bool
 {
   if (value != 0) return true;
 
-  std::cerr << "A value must be not zero for " << flagname << std::endl;
+  std::cerr << "A value must be not zero for " << flagname << "\n";
   return false;
 }
 
+template <class UInt>
 static auto
-ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &seed)  //
+ValidateBlockSize(  //
+    const char *flagname,
+    const UInt value)  //
+    -> bool
+{
+  if (value < 8) {
+    std::cerr << "A value is too small: " << flagname << "\n";
+    return false;
+  }
+  if (value & (value - 1)) {
+    std::cerr << "A value must be the exponential in two: " << flagname << "\n";
+    return false;
+  }
+  return true;
+}
+
+static auto
+ValidateRandomSeed(  //
+    [[maybe_unused]] const char *flagname,
+    const std::string &seed)  //
     -> bool
 {
   if (seed.empty()) return true;
@@ -59,7 +81,7 @@ ValidateRandomSeed([[maybe_unused]] const char *flagname, const std::string &see
   try {
     std::stoul(seed);
   } catch (const std::invalid_argument &) {
-    std::cerr << "A random seed must be unsigned integers" << std::endl;
+    std::cerr << "A random seed must be unsigned integers\n";
     return false;
   }
   return true;

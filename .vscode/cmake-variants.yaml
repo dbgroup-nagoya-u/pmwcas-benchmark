@@ -7,8 +7,8 @@ buildType:
       long: Include debugging information without optimizations
       buildType: Debug
       settings:
-        PMWCAS_BENCH_ELEMENT_NUM: 100000
-        PMWCAS_BENCH_TARGET_NUM: 3
+        PMWCAS_USE_DIRTY_FLAG: OFF
+        PMWCAS_BENCH_MAX_TARGET_NUM: 8
         PMWCAS_BENCH_BUILD_TESTS: ON
         DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
         DBGROUP_TEST_THREAD_NUM: 8
@@ -17,8 +17,8 @@ buildType:
       long: Perform optimizations and include debugging informatin
       buildType: RelWithDebInfo
       settings:
-        PMWCAS_BENCH_ELEMENT_NUM: 1000000
-        PMWCAS_BENCH_TARGET_NUM: 3
+        PMWCAS_USE_DIRTY_FLAG: OFF
+        PMWCAS_BENCH_MAX_TARGET_NUM: 8
         PMWCAS_BENCH_BUILD_TESTS: ON
         DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
         DBGROUP_TEST_THREAD_NUM: 8
@@ -27,8 +27,8 @@ buildType:
       long: Perform optimizations and omit debugging informatin
       buildType: Release
       settings:
-        PMWCAS_BENCH_ELEMENT_NUM: 1000000
-        PMWCAS_BENCH_TARGET_NUM: 3
+        PMWCAS_USE_DIRTY_FLAG: OFF
+        PMWCAS_BENCH_MAX_TARGET_NUM: 8
         PMWCAS_BENCH_BUILD_TESTS: ON
         DBGROUP_TEST_TMP_PMEM_PATH: "/pmem_tmp"
         DBGROUP_TEST_THREAD_NUM: 8
