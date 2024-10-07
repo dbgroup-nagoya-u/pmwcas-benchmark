@@ -45,7 +45,7 @@ cd pmwcas-benchmark
 
 ```bash
 mkdir build && cd build
-cmake .. /
+cmake .. \
   -DCMAKE_BUILD_TYPE=Release \
   -DPMWCAS_BENCH_BUILD_TESTS=ON \
   -DDBGROUP_TEST_TMP_PMEM_PATH=/pmem_tmp
