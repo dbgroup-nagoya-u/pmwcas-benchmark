@@ -1,6 +1,6 @@
 # PMwCAS Benchmark
 
-[![Ubuntu 22.04](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/ubuntu_22.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/ubuntu_22.yaml) [![Ubuntu 20.04](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/ubuntu_20.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/ubuntu_20.yaml)
+[![Ubuntu 24.04](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/ubuntu_24.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/ubuntu_24.yaml) [![Ubuntu 22.04](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/ubuntu_22.yaml/badge.svg)](https://github.com/dbgroup-nagoya-u/pmwcas-benchmark/actions/workflows/ubuntu_22.yaml)
 
 - [Build](#build)
     - [Prerequisites](#prerequisites)
