@@ -6,11 +6,6 @@ on:
       os:
         required: true
         type: string
-    secrets:
-      app_id:
-        required: true
-      ssh_key:
-        required: true
 
 env:
   BUILD_TYPE: Release
@@ -21,20 +16,8 @@ jobs:
     timeout-minutes: 10
 
     steps:
-    - name: Create token
-      uses: actions/create-github-app-token@v1
-      id: app_token
-      with:
-        app-id: ${{ secrets.app_id }}
-        private-key: ${{ secrets.ssh_key }}
-        owner: ${{ github.repository_owner }}
-
     - name: Clone Main Repository
       uses: actions/checkout@v4
-      with:
-        submodules: true
-        token: ${{ steps.app_token.outputs.token }}
-        persist-credentials: false
 
     - name: Create Build Environment
       shell: bash
